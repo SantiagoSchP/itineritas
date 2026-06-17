@@ -486,6 +486,20 @@ input[type="file"]{display:none}
         <div id="notif-crono-status" style="font-size:12px;color:var(--teal);margin-top:6px"></div>
       </div>
     </div>
+    <div class="card">
+      <div class="card-title"><span>&#128231;</span> Resumen diario por email</div>
+      <p style="font-size:12px;color:var(--ink3);margin-bottom:10px">Recibi un correo todos los dias con las actividades de tu cronograma. Funciona aunque no tengas la app abierta, incluso en iPhone.</p>
+      <div class="remember-row" style="margin-bottom:12px">
+        <input type="checkbox" id="resumen-activado">
+        <label for="resumen-activado">Activar resumen diario</label>
+      </div>
+      <label>Hora del envio</label>
+      <input type="time" id="resumen-hora" value="07:00">
+      <label>Correo de destino (vacio = tu correo de cuenta)</label>
+      <input type="email" id="resumen-email" placeholder="tu-correo@ejemplo.com">
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="saveResumenDiario()">Guardar configuracion</button>
+      <div id="resumen-status" style="font-size:12px;color:var(--teal);margin-top:8px"></div>
+    </div>
   </div>
 </div>
 
@@ -1363,7 +1377,31 @@ function loadCronoXLSX(input){
   r.onerror=function(){document.getElementById('crono-excel-msg').textContent='Error al leer el archivo.';};r.readAsBinaryString(file);input.value='';
 }
 
-function renderPerfil(){document.getElementById('profile-name-display').textContent=currentName||currentUser;document.getElementById('profile-email-display').textContent=currentUser;document.getElementById('profile-avatar').textContent=(currentName||currentUser).charAt(0).toUpperCase();document.getElementById('edit-name').value=currentName||'';document.getElementById('trip-start-input').value=appState.tripStart||'';renderNotifStatus();scheduleAllNotifs();}
+function renderPerfil(){document.getElementById('profile-name-display').textContent=currentName||currentUser;document.getElementById('profile-email-display').textContent=currentUser;document.getElementById('profile-avatar').textContent=(currentName||currentUser).charAt(0).toUpperCase();document.getElementById('edit-name').value=currentName||'';document.getElementById('trip-start-input').value=appState.tripStart||'';renderNotifStatus();scheduleAllNotifs();renderResumenDiario();}
+
+function renderResumenDiario(){
+  var cfg=appState.resumenDiario||{activado:false,hora:'07:00',emailDestino:'',zona:''};
+  document.getElementById('resumen-activado').checked=!!cfg.activado;
+  document.getElementById('resumen-hora').value=cfg.hora||'07:00';
+  document.getElementById('resumen-email').value=cfg.emailDestino||'';
+}
+
+function saveResumenDiario(){
+  var activado=document.getElementById('resumen-activado').checked;
+  var hora=val('resumen-hora')||'07:00';
+  var emailDestino=val('resumen-email').trim();
+  var zona='';
+  try{zona=Intl.DateTimeFormat().resolvedOptions().timeZone;}catch(e){zona='America/Argentina/Buenos_Aires';}
+  appState.resumenDiario={activado:activado,hora:hora,emailDestino:emailDestino,zona:zona};
+  saveState();
+  var st=document.getElementById('resumen-status');
+  if(activado){
+    st.textContent='Activado. Vas a recibir el resumen todos los dias a las '+hora+' (zona horaria detectada: '+zona+').';
+  }else{
+    st.textContent='Resumen diario desactivado.';
+  }
+  showToast('Configuracion guardada');
+}
 function saveTripStart(){var d=val('trip-start-input');if(!d){showToast('Selecciona una fecha');return;}appState.tripStart=d;saveState();renderHome();showToast('Fecha de inicio guardada');}
 function saveProfileName(){var name=val('edit-name').trim();if(!name){showToast('Ingresa un nombre');return;}currentName=name;sbUpsert(currentUser,currentHash,currentName,appState).then(function(){renderPerfil();showToast('Nombre actualizado');}).catch(function(){showToast('Error al guardar');});}
 function savePassword(){var curr=document.getElementById('pass-current').value;var nw=document.getElementById('pass-new').value;var nw2=document.getElementById('pass-new2').value;var err=document.getElementById('pass-error'),ok=document.getElementById('pass-success');err.style.display='none';ok.style.display='none';if(hashPass(curr)!==currentHash){showErr('pass-error','Contrasena actual incorrecta.');return;}if(nw.length<6){showErr('pass-error','Minimo 6 caracteres.');return;}if(nw!==nw2){showErr('pass-error','Las contrasenas no coinciden.');return;}var newHash=hashPass(nw);sbUpsert(currentUser,newHash,currentName,appState).then(function(){currentHash=newHash;ok.textContent='Contrasena cambiada';ok.style.display='block';document.getElementById('pass-current').value='';document.getElementById('pass-new').value='';document.getElementById('pass-new2').value='';}).catch(function(){showErr('pass-error','Error al guardar.');});}
