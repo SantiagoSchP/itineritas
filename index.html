@@ -51,6 +51,36 @@ body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink)
 .nav-item:hover{color:#fdf6e9;background:rgba(255,255,255,.08)}
 .nav-sync{font-size:11px;color:rgba(253,246,233,.45);padding:6px 1.25rem;font-style:italic}
 .main{flex:1;padding:1rem;max-width:700px;margin:0 auto;width:100%}
+
+/* ===== Navegacion inferior y boton de accion rapida (solo movil) ===== */
+.bottom-nav{display:none}
+.fab-action{display:none}
+@media (max-width:720px){
+  .main{padding-bottom:88px}
+  .bottom-nav{
+    display:flex;position:fixed;left:0;right:0;bottom:0;z-index:150;
+    background:var(--crimson);box-shadow:0 -2px 16px rgba(100,10,10,.25);
+    padding-bottom:env(safe-area-inset-bottom,0);
+  }
+  .bottom-nav-item{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    background:transparent;border:none;color:rgba(253,246,233,.65);cursor:pointer;
+    min-height:58px;padding:6px 2px;font-family:'Inter',sans-serif;
+  }
+  .bottom-nav-item .bn-ico{font-size:21px;line-height:1}
+  .bottom-nav-item .bn-lbl{font-size:10px;letter-spacing:.02em}
+  .bottom-nav-item.active{color:#fdf6e9}
+  .bottom-nav-item.active .bn-ico{transform:translateY(-1px)}
+  .fab-action{
+    display:flex;position:fixed;right:16px;bottom:78px;z-index:160;
+    width:56px;height:56px;border-radius:50%;align-items:center;justify-content:center;
+    background:var(--gold);color:#fff8e7;border:none;font-size:26px;
+    box-shadow:0 4px 14px rgba(120,80,0,.35);cursor:pointer;
+  }
+  .fab-action:active{background:var(--gold2)}
+  /* El menu hamburguesa de arriba queda para las secciones secundarias */
+  .nav-hamburger{min-width:44px;min-height:44px}
+}
 .section{display:none}.section.active{display:block}
 .card{background:rgba(255,252,244,.95);border-radius:var(--radius);border:0.5px solid var(--border2);padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
 .card-title{font-family:'Cinzel',serif;font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;display:flex;align-items:center;gap:7px}
@@ -232,6 +262,18 @@ input[type="file"]{display:none}
       <button class="nav-item" style="color:rgba(253,246,233,.5)" onclick="doLogout()"><span class="ico">&#128682;</span>Cerrar sesion</button>
     </div>
   </nav>
+
+  <!-- Navegacion inferior para uso con una sola mano (solo en pantallas moviles) -->
+  <div class="bottom-nav" id="bottom-nav">
+    <button class="bottom-nav-item active" id="bnav-home" onclick="showSection('home')"><span class="bn-ico">&#127968;</span><span class="bn-lbl">Inicio</span></button>
+    <button class="bottom-nav-item" id="bnav-bitacora" onclick="showSection('bitacora')"><span class="bn-ico">&#128218;</span><span class="bn-lbl">Bitacora</span></button>
+    <button class="bottom-nav-item" id="bnav-transporte" onclick="showSection('transporte')"><span class="bn-ico">&#9992;</span><span class="bn-lbl">Viaje</span></button>
+    <button class="bottom-nav-item" id="bnav-finanzas" onclick="showSection('finanzas')"><span class="bn-ico">&#128176;</span><span class="bn-lbl">Gastos</span></button>
+    <button class="bottom-nav-item" id="bnav-mas" onclick="toggleDrawer()"><span class="bn-ico">&#9776;</span><span class="bn-lbl">Mas</span></button>
+  </div>
+
+  <!-- Boton flotante de accion rapida: su funcion cambia segun la seccion activa -->
+  <button class="fab-action" id="fab-action" onclick="handleFabClick()">+</button>
 
   <!-- HOME -->
   <div class="section active main" id="section-home">
@@ -717,14 +759,41 @@ function closeDrawer(){document.getElementById('nav-drawer').classList.remove('o
 function showSection(name){
   document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
   document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.bottom-nav-item').forEach(function(b){b.classList.remove('active');});
   document.getElementById('section-'+name).classList.add('active');
   var nb=document.getElementById('nav-'+name);if(nb)nb.classList.add('active');
+  var bnb=document.getElementById('bnav-'+name);if(bnb)bnb.classList.add('active');
   closeDrawer();
   if(name==='bitacora')renderBitacoraDays();
   if(name==='finanzas')renderGastos();
   if(name==='intenciones')renderIntenciones();
   if(name==='home')renderHome();
   if(name==='perfil')renderPerfil();
+  updateFab(name);
+}
+
+// El boton flotante (FAB) cambia su accion segun la seccion activa,
+// para que la accion mas comun de cada pantalla este siempre a un toque del pulgar.
+var fabSectionActual='home';
+function updateFab(name){
+  fabSectionActual=name;
+  var fab=document.getElementById('fab-action');
+  if(!fab)return;
+  var visibleEn={finanzas:true,intenciones:true,bitacora:true,transporte:true};
+  fab.style.display=visibleEn[name]?'flex':'none';
+}
+function handleFabClick(){
+  if(fabSectionActual==='finanzas'){
+    document.getElementById('gasto-desc').scrollIntoView({behavior:'smooth',block:'center'});
+    setTimeout(function(){document.getElementById('gasto-desc').focus();},300);
+  }else if(fabSectionActual==='intenciones'){
+    document.getElementById('int-texto').scrollIntoView({behavior:'smooth',block:'center'});
+    setTimeout(function(){document.getElementById('int-texto').focus();},300);
+  }else if(fabSectionActual==='bitacora'){
+    openModal('modal-crono');
+  }else if(fabSectionActual==='transporte'){
+    openModalVuelo(-1);
+  }
 }
 
 function todayStr(){var now=new Date();return now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');}
