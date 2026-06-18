@@ -77,6 +77,14 @@ label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--i
 .home-rule{width:80px;height:1.5px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:8px auto}
 .home-date{text-align:center;font-family:'IM Fell English',serif;font-size:16px;color:var(--ink3);margin-top:10px;margin-bottom:1rem}
 .stat-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1rem}
+.trip-progress-card{background:rgba(255,252,244,.95);border-radius:var(--radius);border:0.5px solid var(--border2);padding:.9rem 1.1rem;text-align:center}
+.trip-progress-label{font-family:'Cinzel',serif;font-size:13px;color:var(--crimson);margin-bottom:8px}
+.trip-progress-bar-bg{width:100%;height:14px;border-radius:8px;background:rgba(90,60,10,.10);overflow:hidden;border:0.5px solid var(--border2)}
+.trip-progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--crimson));border-radius:8px;transition:width .4s ease}
+.trip-progress-sub{font-size:11px;color:var(--ink3);margin-top:6px}
+.trip-countdown-card{background:linear-gradient(135deg,rgba(184,134,11,.09),rgba(139,26,26,.07));border:0.5px solid var(--border2);border-radius:var(--radius);padding:1rem;text-align:center}
+.trip-countdown-num{font-family:'Cinzel',serif;font-size:28px;font-weight:600;color:var(--crimson)}
+.trip-countdown-txt{font-size:13px;color:var(--ink3);margin-top:4px;font-family:'IM Fell English',serif}
 .stat-card{background:rgba(255,252,244,.95);border-radius:var(--radius);border:0.5px solid var(--border2);padding:.9rem 1rem;text-align:center}
 .stat-num{font-family:'Cinzel',serif;font-size:20px;font-weight:600;color:var(--crimson)}
 .stat-lbl{font-size:11px;color:var(--ink3);margin-top:3px}
@@ -234,6 +242,7 @@ input[type="file"]{display:none}
       <div class="stat-card"><div class="stat-num" id="home-day">-</div><div class="stat-lbl">Dia del viaje</div></div>
       <div class="stat-card"><div class="stat-num" id="home-gastos-total">-</div><div class="stat-lbl">Gastos (EUR)</div></div>
     </div>
+    <div id="home-trip-status" style="margin-bottom:1rem"></div>
     <div class="card">
       <div class="card-title"><span>&#128591;</span> Intenciones de hoy</div>
       <div id="home-intenciones-hoy"><div class="empty-state"><span class="eico">&#128591;</span>Sin intenciones para hoy</div></div>
@@ -435,10 +444,13 @@ input[type="file"]{display:none}
         <div style="font-size:12px;color:var(--ink3);margin-top:4px" id="profile-email-display">-</div>
       </div>
       <div class="sep"></div>
-      <div class="card-title" style="margin-top:.5rem"><span>&#9881;</span> Fecha de inicio del viaje</div>
+      <div class="card-title" style="margin-top:.5rem"><span>&#9881;</span> Fechas del viaje</div>
       <label>Primer dia del viaje</label>
       <input type="date" id="trip-start-input">
-      <button class="btn btn-primary btn-sm" onclick="saveTripStart()">Guardar fecha</button>
+      <label>Ultimo dia del viaje</label>
+      <input type="date" id="trip-end-input">
+      <button class="btn btn-primary btn-sm" onclick="saveTripDates()">Guardar fechas</button>
+      <div id="trip-duration-info" style="font-size:12px;color:var(--ink3);margin-top:8px;font-style:italic"></div>
     </div>
     <div class="card">
       <div class="card-title"><span>&#9999;</span> Editar nombre</div>
@@ -594,7 +606,7 @@ function sbH(){return{'Content-Type':'application/json','apikey':SB_KEY,'Authori
 function sbGet(email){return fetch(SB_URL+'/rest/v1/user_data?email=eq.'+encodeURIComponent(email)+'&select=*',{headers:sbH()}).then(function(r){return r.json();}).then(function(rows){return rows[0]||null;});}
 function sbUpsert(email,hash,name,data){return fetch(SB_URL+'/rest/v1/user_data',{method:'POST',headers:Object.assign({},sbH(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify({email:email,password_hash:hash,name:name,data:data,updated_at:new Date().toISOString()})}).then(function(r){if(!r.ok)throw new Error('sb '+r.status);});}
 
-function freshState(){return{currentDay:0,tripStart:new Date().toISOString().slice(0,10),days:{},vuelos:[],terrestres:[],gastos:[],intenciones:[],cronograma:[],euroRate:null,euroDate:null,euroSource:null};}
+function freshState(){return{currentDay:0,tripStart:new Date().toISOString().slice(0,10),tripEnd:'',days:{},vuelos:[],terrestres:[],gastos:[],intenciones:[],cronograma:[],euroRate:null,euroDate:null,euroSource:null};}
 function lsSet(k,v){try{localStorage.setItem('rc_'+k,JSON.stringify(v));}catch(e){}}
 function lsGet(k){try{var v=localStorage.getItem('rc_'+k);return v!==null?JSON.parse(v):null;}catch(e){return null;}}
 function lsDel(k){try{localStorage.removeItem('rc_'+k);}catch(e){}}
@@ -717,10 +729,55 @@ function showSection(name){
 
 function todayStr(){var now=new Date();return now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');}
 
+// Calcula y muestra en el Home si el viaje todavia no empezo (contador de
+// dias faltantes), esta en curso (barra de progreso), o ya termino.
+function renderTripStatus(now){
+  var el=document.getElementById('home-trip-status');
+  if(!el)return;
+  if(!appState.tripStart){el.innerHTML='';return;}
+
+  var hoyMidnight=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  var start=new Date(appState.tripStart+'T00:00:00');
+
+  if(hoyMidnight<start){
+    // El viaje todavia no empezo
+    var diasFaltan=Math.ceil((start-hoyMidnight)/86400000);
+    el.innerHTML='<div class="trip-countdown-card"><div class="trip-countdown-num">'+diasFaltan+'</div><div class="trip-countdown-txt">'+(diasFaltan===1?'Falta 1 dia para empezar tu peregrinacion':'Faltan '+diasFaltan+' dias para empezar tu peregrinacion')+'</div></div>';
+    return;
+  }
+
+  if(!appState.tripEnd){
+    // Hay inicio pero no fin configurado: no podemos mostrar barra de progreso
+    el.innerHTML='';
+    return;
+  }
+
+  var end=new Date(appState.tripEnd+'T00:00:00');
+  var totalDias=Math.floor((end-start)/86400000)+1;
+  var diaActual=Math.floor((hoyMidnight-start)/86400000)+1;
+
+  if(diaActual>totalDias){
+    // El viaje ya termino
+    el.innerHTML='<div class="trip-countdown-card"><div class="trip-countdown-txt">Tu peregrinacion ya ha concluido. Gracias por compartir este camino.</div></div>';
+    return;
+  }
+
+  var diaMostrado=Math.min(Math.max(diaActual,1),totalDias);
+  var porcentaje=Math.round((diaMostrado/totalDias)*100);
+  var diasRestantes=totalDias-diaMostrado;
+
+  el.innerHTML='<div class="trip-progress-card">'+
+    '<div class="trip-progress-label">Dia '+diaMostrado+' de '+totalDias+'</div>'+
+    '<div class="trip-progress-bar-bg"><div class="trip-progress-bar-fill" style="width:'+porcentaje+'%"></div></div>'+
+    '<div class="trip-progress-sub">'+porcentaje+'% completado'+(diasRestantes>0?' &mdash; '+diasRestantes+' dia'+(diasRestantes===1?'':'s')+' para terminar':' &mdash; ultimo dia')+'</div>'+
+    '</div>';
+}
+
 function renderHome(){
   var now=new Date();
   document.getElementById('home-date').textContent=now.toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   if(appState.tripStart){var s=new Date(appState.tripStart+'T00:00:00');var d=Math.floor((now-s)/86400000)+1;document.getElementById('home-day').textContent=d>=1?'Dia '+d:'-';}
+  renderTripStatus(now);
   var tE=appState.gastos.filter(function(g){return g.moneda==='EUR';}).reduce(function(a,g){return a+parseFloat(g.monto||0);},0);
   document.getElementById('home-gastos-total').textContent='EUR '+tE.toFixed(2);
   var td=todayStr();
@@ -765,7 +822,19 @@ function borrarTodoCrono(){
 }
 
 function getDayKey(o){var s=new Date((appState.tripStart||new Date().toISOString().slice(0,10))+'T00:00:00');s.setDate(s.getDate()+o);return s.toISOString().slice(0,10);}
-function renderBitacoraDays(){var tabs=document.getElementById('bitacora-day-tabs');tabs.innerHTML='';for(var i=0;i<30;i++){var t=document.createElement('button');t.className='day-tab'+(i===appState.currentDay?' active':'');t.textContent='Dia '+(i+1);(function(idx){t.onclick=function(){selectDay(idx);};})(i);tabs.appendChild(t);}loadDayContent();}
+
+// Calcula la cantidad total de dias del viaje segun tripStart y tripEnd.
+// Si no hay tripEnd configurada, devuelve un valor por defecto razonable (30)
+// para no romper la app de quienes todavia no configuraron la fecha de fin.
+function getDuracionViaje(){
+  if(!appState.tripStart||!appState.tripEnd)return 30;
+  var s=new Date(appState.tripStart+'T00:00:00');
+  var e=new Date(appState.tripEnd+'T00:00:00');
+  var dias=Math.floor((e-s)/86400000)+1;
+  return dias>=1?dias:30;
+}
+
+function renderBitacoraDays(){var tabs=document.getElementById('bitacora-day-tabs');tabs.innerHTML='';var totalDias=getDuracionViaje();for(var i=0;i<totalDias;i++){var t=document.createElement('button');t.className='day-tab'+(i===appState.currentDay?' active':'');t.textContent='Dia '+(i+1);(function(idx){t.onclick=function(){selectDay(idx);};})(i);tabs.appendChild(t);}loadDayContent();}
 function selectDay(i){appState.currentDay=i;document.querySelectorAll('.day-tab').forEach(function(t,idx){t.classList.toggle('active',idx===i);});loadDayContent();}
 function loadDayContent(){var key=getDayKey(appState.currentDay);var day=appState.days[key]||{};document.getElementById('cronica-text').value=day.cronica||'';document.getElementById('cosecha-text').value=day.cosecha||'';renderPhotos('cronica',day.photos_cronica||[]);renderPhotos('cosecha',day.photos_cosecha||[]);var m=day.minuta||'';document.getElementById('minuta-result').style.display=m?'block':'none';document.getElementById('minuta-result').textContent=m;document.getElementById('minuta-share-btns').style.display=m?'block':'none';}
 function showSubTab(name){['cronica','cosecha','minuta'].forEach(function(t){document.getElementById('subtab-'+t).style.display=t===name?'block':'none';});document.querySelectorAll('.sub-tab').forEach(function(b,i){b.classList.toggle('active',['cronica','cosecha','minuta'][i]===name);});}
@@ -1377,7 +1446,7 @@ function loadCronoXLSX(input){
   r.onerror=function(){document.getElementById('crono-excel-msg').textContent='Error al leer el archivo.';};r.readAsBinaryString(file);input.value='';
 }
 
-function renderPerfil(){document.getElementById('profile-name-display').textContent=currentName||currentUser;document.getElementById('profile-email-display').textContent=currentUser;document.getElementById('profile-avatar').textContent=(currentName||currentUser).charAt(0).toUpperCase();document.getElementById('edit-name').value=currentName||'';document.getElementById('trip-start-input').value=appState.tripStart||'';renderNotifStatus();scheduleAllNotifs();renderResumenDiario();}
+function renderPerfil(){document.getElementById('profile-name-display').textContent=currentName||currentUser;document.getElementById('profile-email-display').textContent=currentUser;document.getElementById('profile-avatar').textContent=(currentName||currentUser).charAt(0).toUpperCase();document.getElementById('edit-name').value=currentName||'';document.getElementById('trip-start-input').value=appState.tripStart||'';document.getElementById('trip-end-input').value=appState.tripEnd||'';mostrarDuracionViaje();renderNotifStatus();scheduleAllNotifs();renderResumenDiario();}
 
 function renderResumenDiario(){
   var cfg=appState.resumenDiario||{activado:false,hora:'07:00',emailDestino:'',zona:''};
@@ -1404,7 +1473,29 @@ function saveResumenDiario(){
   }
   showToast('Configuracion guardada');
 }
-function saveTripStart(){var d=val('trip-start-input');if(!d){showToast('Selecciona una fecha');return;}appState.tripStart=d;saveState();renderHome();showToast('Fecha de inicio guardada');}
+function saveTripDates(){
+  var dStart=val('trip-start-input');
+  var dEnd=val('trip-end-input');
+  if(!dStart){showToast('Selecciona la fecha de inicio');return;}
+  if(dEnd&&dEnd<dStart){showToast('La fecha de fin no puede ser anterior a la de inicio');return;}
+  appState.tripStart=dStart;
+  appState.tripEnd=dEnd||'';
+  saveState();
+  renderHome();
+  mostrarDuracionViaje();
+  showToast('Fechas guardadas');
+}
+
+function mostrarDuracionViaje(){
+  var el=document.getElementById('trip-duration-info');
+  if(!el)return;
+  if(appState.tripStart&&appState.tripEnd){
+    var dias=getDuracionViaje();
+    el.textContent='Tu viaje dura '+dias+' dia'+(dias===1?'':'s')+'.';
+  }else{
+    el.textContent='Completa ambas fechas para calcular la duracion total del viaje.';
+  }
+}
 function saveProfileName(){var name=val('edit-name').trim();if(!name){showToast('Ingresa un nombre');return;}currentName=name;sbUpsert(currentUser,currentHash,currentName,appState).then(function(){renderPerfil();showToast('Nombre actualizado');}).catch(function(){showToast('Error al guardar');});}
 function savePassword(){var curr=document.getElementById('pass-current').value;var nw=document.getElementById('pass-new').value;var nw2=document.getElementById('pass-new2').value;var err=document.getElementById('pass-error'),ok=document.getElementById('pass-success');err.style.display='none';ok.style.display='none';if(hashPass(curr)!==currentHash){showErr('pass-error','Contrasena actual incorrecta.');return;}if(nw.length<6){showErr('pass-error','Minimo 6 caracteres.');return;}if(nw!==nw2){showErr('pass-error','Las contrasenas no coinciden.');return;}var newHash=hashPass(nw);sbUpsert(currentUser,newHash,currentName,appState).then(function(){currentHash=newHash;ok.textContent='Contrasena cambiada';ok.style.display='block';document.getElementById('pass-current').value='';document.getElementById('pass-new').value='';document.getElementById('pass-new2').value='';}).catch(function(){showErr('pass-error','Error al guardar.');});}
 
