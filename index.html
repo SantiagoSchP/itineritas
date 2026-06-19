@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#8b1a1a">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Itineritas">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <title>Itineritas</title>
 <script>
@@ -138,6 +142,8 @@ body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink)
     padding-bottom:env(safe-area-inset-bottom,0);
     overflow-x:auto;scrollbar-width:none;
     -webkit-overflow-scrolling:touch;
+    touch-action:pan-x;
+    overscroll-behavior-x:contain;
   }
   .bottom-nav::-webkit-scrollbar{display:none}
   .bottom-nav-item{
@@ -331,7 +337,13 @@ input[type="file"]{display:none}
     </div>
     <div class="nav-top">
       <span class="nav-brand" style="cursor:pointer" onclick="showSection('home')">Itineritas</span>
-      <button id="btn-theme-toggle" onclick="toggleThemeQuick()" style="background:transparent;border:none;color:rgba(253,246,233,.85);font-size:20px;cursor:pointer;padding:6px 10px;min-width:44px;min-height:44px;line-height:1" title="Cambiar tema"></button>
+      <div id="theme-toggle-wrap" onclick="toggleThemeQuick()" title="Cambiar tema claro/oscuro" style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 8px;min-height:44px">
+        <span style="font-size:13px;line-height:1">&#9728;&#65039;</span>
+        <div id="theme-toggle-track" style="width:36px;height:20px;border-radius:10px;background:rgba(255,255,255,.25);position:relative;transition:background .2s;flex-shrink:0">
+          <div id="theme-toggle-thumb" style="width:16px;height:16px;border-radius:50%;background:#fdf6e9;position:absolute;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.3)"></div>
+        </div>
+        <span style="font-size:13px;line-height:1">&#127769;</span>
+      </div>
       <button class="nav-hamburger" onclick="toggleDrawer()">&#9776;</button>
     </div>
     <div class="nav-drawer" id="nav-drawer">
@@ -761,19 +773,25 @@ function setTheme(modo){
   }
 }
 
-// Cicla entre claro → oscuro → automatico con cada toque
 function toggleThemeQuick(){
   var actual=lsGet('theme')||'auto';
-  var siguiente=actual==='auto'?'dark':actual==='dark'?'light':'auto';
-  setTheme(siguiente);
+  // La perilla alterna entre claro y oscuro solamente.
+  // "auto" se considera claro si el sistema es claro, oscuro si es oscuro.
+  var sistemaOscuro=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches;
+  var esOscuro=(actual==='dark')||(actual==='auto'&&sistemaOscuro);
+  setTheme(esOscuro?'light':'dark');
 }
 
 function actualizarIconoTema(modo){
-  var btn=document.getElementById('btn-theme-toggle');
-  if(!btn)return;
-  if(modo==='dark')btn.innerHTML='&#127769;';       // luna
-  else if(modo==='light')btn.innerHTML='&#9728;&#65039;'; // sol
-  else btn.innerHTML='&#9728;&#65039;&#127769;';    // sol+luna = auto
+  var thumb=document.getElementById('theme-toggle-thumb');
+  var track=document.getElementById('theme-toggle-track');
+  if(!thumb||!track)return;
+  // Detectar si el sistema tiene modo oscuro (para el caso "auto")
+  var sistemaOscuro=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches;
+  var esOscuro=(modo==='dark')||(modo==='auto'&&sistemaOscuro);
+  // Perilla a la derecha = noche, a la izquierda = dia
+  thumb.style.transform=esOscuro?'translateX(16px)':'translateX(0)';
+  track.style.background=esOscuro?'rgba(255,255,255,.5)':'rgba(255,255,255,.25)';
 }
 
 function aplicarTema(modo){
@@ -1239,18 +1257,22 @@ function processPDF(file){
 
 function extractFlightsWithGemini(text){
   document.getElementById('vuelo-pdf-msg').textContent='Analizando vuelos...';
-  var prompt='Del siguiente texto extraido de un pasaje aereo en PDF, identifica TODOS los vuelos mencionados (puede haber varios: ida, vuelta, escalas, tramos). '+
-    'Para cada vuelo devolve un objeto con estos campos exactos:\n'+
-    '- ruta: formato "Ciudad origen - Ciudad destino"\n'+
-    '- aerolinea: nombre de la aerolinea seguido del numero de vuelo, ej "Iberia IB1234"\n'+
-    '- fecha: formato YYYY-MM-DD (fecha de salida)\n'+
-    '- salida: formato YYYY-MM-DDTHH:MM (fecha y hora de salida)\n'+
-    '- llegada: formato YYYY-MM-DDTHH:MM (fecha y hora de llegada)\n'+
-    '- terminal: terminal o aeropuerto de salida si aparece, sino cadena vacia\n'+
-    '- notas: numero de reserva o codigo de confirmacion si aparece, sino cadena vacia\n\n'+
-    'Si algun dato no aparece en el texto, dejalo como cadena vacia "". '+
-    'Respondé UNICAMENTE con un array JSON valido (empezando con [ y terminando con ]), sin texto adicional, sin markdown, sin explicaciones.\n\n'+
-    'TEXTO DEL PDF:\n'+text.slice(0,8000);
+  var prompt=
+    'Sos un experto en interpretar pasajes aereos. Del siguiente texto extraido de un PDF de pasaje, extraé TODOS los segmentos de vuelo (cada tramo es un vuelo separado).\n\n'+
+    'REGLAS CRITICAS que debes seguir con maxima precision:\n'+
+    '1. "ruta": SIEMPRE debe ser "Ciudad de salida - Ciudad de llegada" en ese ORDEN. La ciudad de salida es donde el avion DESPEGA, la de llegada donde ATERRIZA. Nunca los inviertas.\n'+
+    '2. "aerolinea": nombre de la aerolinea + codigo IATA + numero de vuelo. Ej: "Iberia IB1234", "Aerolíneas Argentinas AR1234". Si solo ves el codigo, usalo igual.\n'+
+    '3. "fecha": formato YYYY-MM-DD. Es la fecha LOCAL de SALIDA del vuelo.\n'+
+    '4. "salida": formato YYYY-MM-DDTHH:MM. Fecha y hora LOCAL de salida. Si el texto dice "14:30" y la fecha es 2025-07-10, el resultado es "2025-07-10T14:30".\n'+
+    '5. "llegada": formato YYYY-MM-DDTHH:MM. Atencion: si la llegada es al dia siguiente, cambia la fecha. Si sale el 10 a las 23:00 y llega 8 horas despues, llega el 11.\n'+
+    '6. "terminal": codigo IATA del aeropuerto de salida (3 letras, ej: "EZE", "MAD", "FCO") si aparece en el texto. Si no, cadena vacia.\n'+
+    '7. "notas": numero de reserva o PNR si aparece (suele ser 6 caracteres alfanumericos). Sino, cadena vacia.\n'+
+    '8. NO inventes vuelos que no esten explicitamente en el texto. Si hay duda, no lo incluyas.\n'+
+    '9. NO repitas el mismo vuelo dos veces aunque aparezca mencionado mas de una vez en el PDF.\n\n'+
+    'Respondé UNICAMENTE con un array JSON valido, empezando con [ y terminando con ], sin texto adicional, sin markdown.\n\n'+
+    'Ejemplo de respuesta correcta:\n'+
+    '[{"ruta":"Buenos Aires - Madrid","aerolinea":"Iberia IB6841","fecha":"2025-07-10","salida":"2025-07-10T13:45","llegada":"2025-07-11T05:30","terminal":"EZE","notas":"ABC123"}]\n\n'+
+    'TEXTO DEL PASAJE (leelo completo antes de responder):\n---\n'+text.slice(0,9000)+'\n---';
   tryGemini(['gemini-1.5-flash','gemini-1.5-flash-8b'],prompt,function(resp){
     var arr=null;
     if(resp){
@@ -1260,12 +1282,14 @@ function extractFlightsWithGemini(text){
         if(start>=0&&end>start)clean=clean.slice(start,end+1);
         arr=JSON.parse(clean);
         if(!Array.isArray(arr))arr=[arr];
+        // Filtrar entradas vacias o invalidas
+        arr=arr.filter(function(f){return f&&(f.ruta||f.aerolinea)&&f.ruta!=='Ciudad de salida - Ciudad de llegada';});
       }catch(ex){arr=null;}
     }
     if(arr&&arr.length){
       var count=addExtractedFlights(arr);
       if(count>0){
-        document.getElementById('vuelo-pdf-msg').textContent=count+' vuelo(s) cargados con IA. Revisa y completa los datos.';
+        document.getElementById('vuelo-pdf-msg').textContent=count+' vuelo(s) cargados. Revisa y corrige los datos si es necesario.';
         showToast(count+' vuelo(s) cargados desde PDF');
         return;
       }
@@ -1273,10 +1297,10 @@ function extractFlightsWithGemini(text){
     var local=extractFlightsLocally(text);
     var count2=addExtractedFlights(local);
     if(count2>0){
-      document.getElementById('vuelo-pdf-msg').textContent=count2+' vuelo(s) detectados automaticamente (sin IA). IMPORTANTE: revisa y completa cada vuelo, especialmente la ruta.';
+      document.getElementById('vuelo-pdf-msg').textContent=count2+' vuelo(s) detectados (sin IA). IMPORTANTE: revisa y completa cada dato, especialmente origen y destino.';
       showToast(count2+' vuelo(s) detectados - revisa los datos');
     }else{
-      document.getElementById('vuelo-pdf-msg').textContent='No se pudieron detectar vuelos automaticamente en este PDF. Por favor cargalos manualmente con "+ Agregar vuelo".';
+      document.getElementById('vuelo-pdf-msg').textContent='No se detectaron vuelos automaticamente. Cargalos manualmente con "+ Agregar vuelo".';
     }
   });
 }
