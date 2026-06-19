@@ -85,8 +85,7 @@ body.theme-dark,html.theme-dark-pre body{
   --overlay-bg:rgba(20,16,11,.92);
   --modal-overlay:rgba(0,0,0,.7);
 }
-body{transition:background-color .25s ease,color .25s ease}
-body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink);min-height:100vh;display:flex;flex-direction:column}
+body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink);min-height:100vh;display:flex;flex-direction:column;transition:background-color .25s ease,color .25s ease}
 #auth-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem 1.5rem}
 .auth-ornament{font-size:36px;color:var(--gold);margin-bottom:.5rem;letter-spacing:4px}
 .auth-title{font-family:'Cinzel',serif;font-size:26px;font-weight:600;color:var(--crimson);text-align:center;margin-bottom:4px}
@@ -97,8 +96,8 @@ body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink)
 .auth-tab{flex:1;padding:9px;background:var(--card-bg);border:none;font-size:12px;font-family:'Cinzel',serif;cursor:pointer;color:var(--ink3);transition:all .15s;letter-spacing:.05em}
 .auth-tab.active{background:var(--crimson);color:#fdf6e9}
 .field-label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);font-weight:500;margin-bottom:5px;display:block}
-.auth-input{width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:14px;font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink);margin-bottom:12px}
-.auth-input:focus{outline:none;border-color:var(--gold);background:#fffdf7}
+.auth-input{width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:14px;font-family:'Inter',sans-serif;background:var(--input-bg);color:var(--ink);margin-bottom:12px}
+.auth-input:focus{outline:none;border-color:var(--gold);background:var(--input-bg-focus)}
 .remember-row{display:flex;align-items:center;gap:8px;margin-bottom:14px}
 .remember-row input[type=checkbox]{width:auto;margin-bottom:0;cursor:pointer;accent-color:var(--crimson)}
 .remember-row label{font-size:12px;color:var(--ink3);margin:0;text-transform:none;letter-spacing:0;cursor:pointer}
@@ -137,11 +136,14 @@ body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink)
     display:flex;position:fixed;left:0;right:0;bottom:0;z-index:150;
     background:var(--crimson);box-shadow:0 -2px 16px rgba(100,10,10,.25);
     padding-bottom:env(safe-area-inset-bottom,0);
+    overflow-x:auto;scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
   }
+  .bottom-nav::-webkit-scrollbar{display:none}
   .bottom-nav-item{
-    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
     background:transparent;border:none;color:rgba(253,246,233,.65);cursor:pointer;
-    min-height:58px;padding:6px 2px;font-family:'Inter',sans-serif;
+    min-height:58px;min-width:68px;padding:6px 4px;font-family:'Inter',sans-serif;
   }
   .bottom-nav-item .bn-ico{font-size:21px;line-height:1}
   .bottom-nav-item .bn-lbl{font-size:10px;letter-spacing:.02em}
@@ -160,8 +162,8 @@ body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink)
 .section{display:none}.section.active{display:block}
 .card{background:var(--card-bg);border-radius:var(--radius);border:0.5px solid var(--border2);padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
 .card-title{font-family:'Cinzel',serif;font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;display:flex;align-items:center;gap:7px}
-input,textarea,select{width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:8px 12px;font-size:14px;font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink);margin-bottom:8px}
-input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);background:#fffdf7}
+input,textarea,select{width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:8px 12px;font-size:14px;font-family:'Inter',sans-serif;background:var(--input-bg);color:var(--ink);margin-bottom:8px}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);background:var(--input-bg-focus)}
 textarea{resize:vertical;min-height:80px}
 label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);display:block;margin-bottom:3px;margin-top:6px}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:0.5px solid var(--border2);background:var(--card-bg);color:var(--ink2);font-size:13px;font-family:'Inter',sans-serif;cursor:pointer;transition:all .15s}
@@ -242,6 +244,7 @@ label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--i
 .lang-label{font-family:'Cinzel',serif;font-size:12px;color:var(--ink2);display:flex;align-items:center;gap:6px}
 .lang-textarea{border:none;border-radius:0;background:var(--card-bg);margin-bottom:0;font-size:14px;min-height:70px;padding:10px 12px}
 .lang-textarea:focus{border:none;outline:none}
+select option{background:var(--input-bg);color:var(--ink)}
 .translate-loading{display:none;color:var(--ink3);font-size:12px;font-style:italic;padding:6px 12px}
 .crono-item{padding:10px;border-radius:8px;background:var(--card-bg);border:0.5px solid var(--border);margin-bottom:6px}
 .crono-item.past{opacity:.55}
@@ -328,6 +331,7 @@ input[type="file"]{display:none}
     </div>
     <div class="nav-top">
       <span class="nav-brand" style="cursor:pointer" onclick="showSection('home')">Itineritas</span>
+      <button id="btn-theme-toggle" onclick="toggleThemeQuick()" style="background:transparent;border:none;color:rgba(253,246,233,.85);font-size:20px;cursor:pointer;padding:6px 10px;min-width:44px;min-height:44px;line-height:1" title="Cambiar tema"></button>
       <button class="nav-hamburger" onclick="toggleDrawer()">&#9776;</button>
     </div>
     <div class="nav-drawer" id="nav-drawer">
@@ -343,13 +347,15 @@ input[type="file"]{display:none}
     </div>
   </nav>
 
-  <!-- Navegacion inferior para uso con una sola mano (solo en pantallas moviles) -->
+  <!-- Navegacion inferior deslizable con todas las secciones -->
   <div class="bottom-nav" id="bottom-nav">
     <button class="bottom-nav-item active" id="bnav-home" onclick="showSection('home')"><span class="bn-ico">&#127968;</span><span class="bn-lbl">Inicio</span></button>
     <button class="bottom-nav-item" id="bnav-bitacora" onclick="showSection('bitacora')"><span class="bn-ico">&#128218;</span><span class="bn-lbl">Bitacora</span></button>
     <button class="bottom-nav-item" id="bnav-transporte" onclick="showSection('transporte')"><span class="bn-ico">&#9992;</span><span class="bn-lbl">Viaje</span></button>
     <button class="bottom-nav-item" id="bnav-finanzas" onclick="showSection('finanzas')"><span class="bn-ico">&#128176;</span><span class="bn-lbl">Gastos</span></button>
-    <button class="bottom-nav-item" id="bnav-mas" onclick="toggleDrawer()"><span class="bn-ico">&#9776;</span><span class="bn-lbl">Mas</span></button>
+    <button class="bottom-nav-item" id="bnav-intenciones" onclick="showSection('intenciones')"><span class="bn-ico">&#128591;</span><span class="bn-lbl">Intenciones</span></button>
+    <button class="bottom-nav-item" id="bnav-traductor" onclick="showSection('traductor')"><span class="bn-ico">&#127760;</span><span class="bn-lbl">Traductor</span></button>
+    <button class="bottom-nav-item" id="bnav-perfil" onclick="showSection('perfil')"><span class="bn-ico">&#128100;</span><span class="bn-lbl">Perfil</span></button>
   </div>
 
   <!-- Boton flotante de accion rapida: su funcion cambia segun la seccion activa -->
@@ -489,7 +495,7 @@ input[type="file"]{display:none}
       <div class="card-title"><span>&#128236;</span> Registrar gasto</div>
       <label>Descripcion</label><input type="text" id="gasto-desc" placeholder="Ej: Almuerzo en Roma">
       <label>Categoria</label>
-      <select id="gasto-cat"><option>Alimentacion</option><option>Transporte</option><option>Alojamiento</option><option>Entradas / museos</option><option>Comunicaciones</option><option>Salud</option><option>Indumentaria</option><option>Articulos religiosos</option><option>Souvenirs</option><option>Otros</option></select>
+      <select id="gasto-cat"><option>Alimentacion</option><option>Alojamiento</option><option>Articulos religiosos</option><option>Comunicaciones</option><option>Entradas / museos</option><option>Indumentaria</option><option>Otros</option><option>Salud</option><option>Souvenirs</option><option>Transporte</option></select>
       <label>Monto</label>
       <div style="display:flex;gap:8px"><select id="gasto-moneda" style="width:80px;margin-bottom:0"><option value="EUR">EUR</option><option value="ARS">ARS</option></select><input type="number" id="gasto-monto" placeholder="0.00" style="flex:1;margin-bottom:8px"></div>
       <label>Medio de pago</label>
@@ -749,27 +755,44 @@ function setTheme(modo){
   lsSet('theme',modo);
   aplicarTema(modo);
   actualizarBotonesTema(modo);
-  // Si estamos viendo los graficos de gastos, los regeneramos para que
-  // tomen el color de texto correcto del nuevo tema.
+  actualizarIconoTema(modo);
   if(document.getElementById('section-finanzas').classList.contains('active')&&typeof renderDashboard==='function'){
     setTimeout(renderDashboard,50);
   }
 }
+
+// Cicla entre claro → oscuro → automatico con cada toque
+function toggleThemeQuick(){
+  var actual=lsGet('theme')||'auto';
+  var siguiente=actual==='auto'?'dark':actual==='dark'?'light':'auto';
+  setTheme(siguiente);
+}
+
+function actualizarIconoTema(modo){
+  var btn=document.getElementById('btn-theme-toggle');
+  if(!btn)return;
+  if(modo==='dark')btn.innerHTML='&#127769;';       // luna
+  else if(modo==='light')btn.innerHTML='&#9728;&#65039;'; // sol
+  else btn.innerHTML='&#9728;&#65039;&#127769;';    // sol+luna = auto
+}
+
 function aplicarTema(modo){
   document.body.classList.remove('theme-dark','theme-light');
   if(modo==='dark')document.body.classList.add('theme-dark');
   else if(modo==='light')document.body.classList.add('theme-light');
-  // si es 'auto' no agregamos ninguna clase: el CSS de prefers-color-scheme decide
 }
+
 function actualizarBotonesTema(modo){
   document.querySelectorAll('.theme-opt').forEach(function(b){
     b.classList.toggle('active',b.getAttribute('data-theme')===modo);
   });
 }
+
 function applyStoredTheme(){
   var modo=lsGet('theme')||'auto';
   aplicarTema(modo);
   actualizarBotonesTema(modo);
+  actualizarIconoTema(modo);
 }
 function lsDel(k){try{localStorage.removeItem('rc_'+k);}catch(e){}}
 function hashPass(p){var h=5381;for(var i=0;i<p.length;i++){h=((h<<5)+h)+p.charCodeAt(i);}return(h>>>0).toString(36);}
@@ -1377,7 +1400,7 @@ function renderGastos(){
   renderDashboard();
 }
 
-var GASTO_CATS=['Alimentacion','Transporte','Alojamiento','Entradas / museos','Comunicaciones','Salud','Indumentaria','Articulos religiosos','Souvenirs','Otros'];
+var GASTO_CATS=['Alimentacion','Alojamiento','Articulos religiosos','Comunicaciones','Entradas / museos','Indumentaria','Otros','Salud','Souvenirs','Transporte'];
 var GASTO_MEDIOS=['Tarjeta credito','Tarjeta debito','Efectivo EUR','Efectivo ARS','Transferencia'];
 var COLORS=['#8b1a1a','#b8860b','#0f5c52','#d4a017','#3d2f18','#1a8a7a','#b52020','#7a6448','#c8ede9','#f0c040'];
 
