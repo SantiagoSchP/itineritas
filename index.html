@@ -14,12 +14,12 @@
 <script>
 // Se ejecuta antes de pintar la pagina, para evitar el parpadeo de
 // pasar brevemente por el tema equivocado antes de aplicar la preferencia guardada.
+// Por defecto (si el usuario nunca eligio nada en este dispositivo) siempre es modo claro.
 (function(){
   try{
     var raw=localStorage.getItem('rc_theme');
-    var modo=raw?JSON.parse(raw):'auto';
+    var modo=raw?JSON.parse(raw):'light';
     if(modo==='dark')document.documentElement.classList.add('theme-dark-pre');
-    else if(modo==='light')document.documentElement.classList.add('theme-light-pre');
   }catch(e){}
 })();
 </script>
@@ -46,30 +46,9 @@
   --modal-overlay:rgba(20,10,0,.55);
 }
 
-/* Modo oscuro automatico: se activa solo si el sistema operativo
-   tiene activado el modo oscuro Y el usuario no fijo manualmente el claro. */
-@media (prefers-color-scheme:dark){
-  body:not(.theme-light){
-    --ink:#f3ead8;--ink2:#e8dcc0;--ink3:#c4b596;
-    --parchment:#1c1610;--parchment2:#26201a;
-    --gold:#d9a52a;--gold2:#e8bc4f;
-    --crimson:#d4574f;--crimson2:#e57870;
-    --teal:#3fcdb8;
-    --border:rgba(217,165,42,0.22);--border2:rgba(217,165,42,0.38);
-    --shadow:0 2px 16px rgba(0,0,0,0.45);
-    --card-bg:rgba(38,32,26,.92);
-    --card-bg-strong:rgba(38,32,26,.97);
-    --input-bg:#241e17;
-    --input-bg-focus:#2c2520;
-    --crimson-tint:rgba(212,87,79,.14);
-    --gold-tint:rgba(217,165,42,.14);
-    --teal-tint:rgba(63,205,184,.13);
-    --danger-bg:rgba(212,87,79,.16);
-    --overlay-bg:rgba(20,16,11,.92);
-    --modal-overlay:rgba(0,0,0,.7);
-  }
-}
-/* Modo oscuro forzado manualmente desde Perfil, sin importar el sistema */
+/* Modo oscuro: se activa SOLO si el usuario lo elige manualmente desde Perfil
+   o la perilla superior. Por defecto la app siempre arranca en modo claro,
+   sin importar la configuracion del sistema operativo. */
 body.theme-dark,html.theme-dark-pre body{
   --ink:#f3ead8;--ink2:#e8dcc0;--ink3:#c4b596;
   --parchment:#1c1610;--parchment2:#26201a;
@@ -266,14 +245,14 @@ select option{background:var(--input-bg);color:var(--ink)}
 .modal{background:var(--parchment);border-radius:var(--radius) var(--radius) 0 0;padding:1.5rem;width:100%;max-width:700px;max-height:90vh;overflow-y:auto;border-top:2px solid var(--gold2)}
 .modal-title{font-family:'Cinzel',serif;font-size:16px;color:var(--crimson);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center}
 .modal-close{background:none;border:none;cursor:pointer;font-size:22px;color:var(--ink3);padding:0 4px}
-.onb-slide{display:none;flex-direction:column;align-items:center;text-align:center;max-width:380px;margin:0 auto;animation:onbFade .35s ease}
+.onb-slide{display:none;flex-direction:column;align-items:center;text-align:center;max-width:380px;width:100%;margin:0 auto;animation:onbFade .35s ease;background:var(--card-bg-strong);border:0.5px solid var(--border2);border-radius:18px;padding:32px 24px;box-shadow:0 8px 40px rgba(0,0,0,.35)}
 .onb-slide.active{display:flex}
 @keyframes onbFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .onb-icon{font-size:52px;line-height:1;margin-bottom:22px}
 .onb-title{font-family:'Cinzel',serif;font-size:21px;color:var(--crimson);margin-bottom:12px}
 .onb-text{font-family:'Inter',sans-serif;font-size:14px;color:var(--ink2);line-height:1.6}
-.onb-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);transition:all .2s}
-.onb-dot.active{background:var(--crimson);width:20px;border-radius:4px}
+.onb-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.35);transition:all .2s}
+.onb-dot.active{background:#fdf6e9;width:20px;border-radius:4px}
 .sep{height:0.5px;background:var(--border2);margin:.75rem 0}
 .flex-row{display:flex;gap:8px;flex-wrap:wrap}
 .flex-row .btn{flex:1;min-width:100px;justify-content:center}
@@ -299,12 +278,12 @@ input[type="file"]{display:none}
 </head>
 <body>
 
-<div id="loading-overlay"><div class="loading-cross">+</div><div class="loading-text" id="loading-text">Cargando...</div><div style="font-family:'IM Fell English',serif;font-size:12px;color:var(--ink3);text-align:center;line-height:1.5">App ad peregrinationem tuam<br>La app para tu peregrinacion</div></div>
+<div id="loading-overlay"><div class="loading-cross">+</div><div class="loading-text" id="loading-text">Cargando...</div><div style="font-family:'IM Fell English',serif;font-size:12px;color:var(--ink3);text-align:center;line-height:1.5">App ad peregrinationem tuam<br>La app para tu peregrinaci&oacute;n</div></div>
 
 <div id="auth-screen" style="display:none">
   <div class="auth-ornament">* * *</div>
   <div class="auth-title">Itineritas</div>
-  <div class="auth-subtitle">App ad peregrinationem tuam<br>La app para tu peregrinacion</div>
+  <div class="auth-subtitle">App ad peregrinationem tuam<br>La app para tu peregrinaci&oacute;n</div>
   <div class="auth-card">
     <div class="auth-divider"></div>
     <div class="auth-tabs">
@@ -314,7 +293,7 @@ input[type="file"]{display:none}
     <div id="panel-login">
       <span class="field-label">Correo electronico</span>
       <input class="auth-input" type="email" id="login-email" placeholder="nombre@ejemplo.com" autocomplete="email">
-      <span class="field-label">Contrasena</span>
+      <span class="field-label">Contrase&ntilde;a</span>
       <input class="auth-input" type="password" id="login-pass" placeholder="........" autocomplete="current-password">
       <div class="remember-row"><input type="checkbox" id="login-remember" checked><label for="login-remember">Mantener sesion iniciada</label></div>
       <div class="auth-error" id="login-error"></div>
@@ -325,10 +304,10 @@ input[type="file"]{display:none}
       <input class="auth-input" type="text" id="reg-name" placeholder="Tu nombre">
       <span class="field-label">Correo electronico</span>
       <input class="auth-input" type="email" id="reg-email" placeholder="nombre@ejemplo.com">
-      <span class="field-label">Contrasena</span>
-      <input class="auth-input" type="password" id="reg-pass" placeholder="Minimo 6 caracteres">
-      <span class="field-label">Confirmar contrasena</span>
-      <input class="auth-input" type="password" id="reg-pass2" placeholder="Repeti la contrasena">
+      <span class="field-label">Contrase&ntilde;a</span>
+      <input class="auth-input" type="password" id="reg-pass" placeholder="M&iacute;nimo 6 caracteres">
+      <span class="field-label">Confirmar contrase&ntilde;a</span>
+      <input class="auth-input" type="password" id="reg-pass2" placeholder="Repet&iacute; la contrase&ntilde;a">
       <div class="remember-row"><input type="checkbox" id="reg-remember" checked><label for="reg-remember">Mantener sesion iniciada</label></div>
       <div class="auth-error" id="reg-error"></div>
       <div class="auth-success" id="reg-success"></div>
@@ -364,7 +343,7 @@ input[type="file"]{display:none}
     </div>
     <div class="nav-drawer" id="nav-drawer">
       <button class="nav-item active" id="nav-home" onclick="showSection('home')"><span class="ico">&#127968;</span>Inicio</button>
-      <button class="nav-item" id="nav-bitacora" onclick="showSection('bitacora')"><span class="ico">&#128218;</span>Bitacora</button>
+      <button class="nav-item" id="nav-bitacora" onclick="showSection('bitacora')"><span class="ico">&#128218;</span>Bit&aacute;cora</button>
       <button class="nav-item" id="nav-transporte" onclick="showSection('transporte')"><span class="ico">&#9992;</span>Transporte</button>
       <button class="nav-item" id="nav-finanzas" onclick="showSection('finanzas')"><span class="ico">&#128176;</span>Finanzas</button>
       <button class="nav-item" id="nav-intenciones" onclick="showSection('intenciones')"><span class="ico">&#128591;</span>Intenciones</button>
@@ -378,7 +357,7 @@ input[type="file"]{display:none}
   <!-- Navegacion inferior deslizable con todas las secciones -->
   <div class="bottom-nav" id="bottom-nav">
     <button class="bottom-nav-item active" id="bnav-home" onclick="showSection('home')"><span class="bn-ico">&#127968;</span><span class="bn-lbl">Inicio</span></button>
-    <button class="bottom-nav-item" id="bnav-bitacora" onclick="showSection('bitacora')"><span class="bn-ico">&#128218;</span><span class="bn-lbl">Bitacora</span></button>
+    <button class="bottom-nav-item" id="bnav-bitacora" onclick="showSection('bitacora')"><span class="bn-ico">&#128218;</span><span class="bn-lbl">Bit&aacute;cora</span></button>
     <button class="bottom-nav-item" id="bnav-transporte" onclick="showSection('transporte')"><span class="bn-ico">&#9992;</span><span class="bn-lbl">Viaje</span></button>
     <button class="bottom-nav-item" id="bnav-finanzas" onclick="showSection('finanzas')"><span class="bn-ico">&#128176;</span><span class="bn-lbl">Gastos</span></button>
     <button class="bottom-nav-item" id="bnav-intenciones" onclick="showSection('intenciones')"><span class="bn-ico">&#128591;</span><span class="bn-lbl">Intenciones</span></button>
@@ -393,7 +372,7 @@ input[type="file"]{display:none}
   <div class="section active main" id="section-home">
     <div class="home-header"><div class="home-crest">&#10011;</div><div class="home-title">Itineritas</div><div class="home-rule"></div></div>
     <p id="home-trip-name" style="text-align:center;font-family:'Cinzel',serif;font-size:13px;color:var(--gold2);margin:-6px 0 4px;letter-spacing:.04em"></p>
-    <p style="text-align:center;font-family:'IM Fell English',serif;font-size:12px;color:var(--ink3);margin-bottom:0;line-height:1.5">App ad peregrinationem tuam<br>La app para tu peregrinacion</p>
+    <p style="text-align:center;font-family:'IM Fell English',serif;font-size:12px;color:var(--ink3);margin-bottom:0;line-height:1.5">App ad peregrinationem tuam<br>La app para tu peregrinaci&oacute;n</p>
     <p class="home-date" id="home-date"></p>
     <div class="stat-row">
       <div class="stat-card"><div class="stat-num" id="home-day">-</div><div class="stat-lbl">Dia del viaje</div></div>
@@ -421,18 +400,18 @@ input[type="file"]{display:none}
 
   <!-- BITACORA -->
   <div class="section main" id="section-bitacora">
-    <div class="section-title"><span>&#128218;</span> Bitacora</div>
+    <div class="section-title"><span>&#128218;</span> Bit&aacute;cora</div>
     <div class="day-tabs" id="bitacora-day-tabs"></div>
     <div class="sub-tabs">
-      <button class="sub-tab active" onclick="showSubTab('cronica')">Cronica</button>
+      <button class="sub-tab active" onclick="showSubTab('cronica')">Cr&oacute;nica</button>
       <button class="sub-tab" onclick="showSubTab('cosecha')">Cosecha</button>
       <button class="sub-tab" onclick="showSubTab('minuta')">Minuta</button>
     </div>
     <div id="subtab-cronica">
       <div class="card">
-        <div class="card-title"><span>&#9997;</span> Cronica del dia</div>
+        <div class="card-title"><span>&#9997;</span> Cr&oacute;nica del d&iacute;a</div>
         <div id="rec-indicator-cronica" class="recording-indicator" style="display:none"><div class="rec-dot"></div>Grabando...</div>
-        <textarea id="cronica-text" placeholder="Escribi aqui la cronica del dia..." style="min-height:140px"></textarea>
+        <textarea id="cronica-text" placeholder="Escrib&iacute; aqu&iacute; la cr&oacute;nica del d&iacute;a..." style="min-height:140px"></textarea>
         <div class="flex-row" style="margin-bottom:8px">
           <button class="btn btn-sm" id="btn-mic-cronica" onclick="toggleMic('cronica')">Dictar</button>
           <button class="btn btn-sm btn-primary" onclick="saveEntry('cronica')">Guardar</button>
@@ -446,7 +425,7 @@ input[type="file"]{display:none}
       <div class="card">
         <div class="card-title"><span>&#127807;</span> Cosecha personal</div>
         <div id="rec-indicator-cosecha" class="recording-indicator" style="display:none"><div class="rec-dot"></div>Grabando...</div>
-        <textarea id="cosecha-text" placeholder="Que te llevas de este dia?" style="min-height:140px"></textarea>
+        <textarea id="cosecha-text" placeholder="Qu&eacute; te llev&aacute;s de este d&iacute;a?" style="min-height:140px"></textarea>
         <div class="flex-row" style="margin-bottom:8px">
           <button class="btn btn-sm" id="btn-mic-cosecha" onclick="toggleMic('cosecha')">Dictar</button>
           <button class="btn btn-sm btn-primary" onclick="saveEntry('cosecha')">Guardar</button>
@@ -459,7 +438,7 @@ input[type="file"]{display:none}
     <div id="subtab-minuta" style="display:none">
       <div class="card">
         <div class="card-title"><span>&#128140;</span> Minuta / WhatsApp</div>
-        <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;font-style:italic">Gemini genera un resumen de la cronica completa del dia para enviar por WhatsApp.</p>
+        <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;font-style:italic">Gemini genera un resumen de la cr&oacute;nica completa del d&iacute;a para enviar por WhatsApp.</p>
         <button class="btn btn-accent" id="btn-generar-minuta" onclick="generarMinuta()">Generar minuta</button>
         <div id="minuta-loading" style="display:none" class="ia-loading"><span></span><span></span><span></span></div>
         <div id="minuta-result" class="minuta-box" style="margin-top:10px;display:none"></div>
@@ -471,10 +450,10 @@ input[type="file"]{display:none}
         </div>
       </div>
       <div class="card">
-        <div class="card-title"><span>&#128218;</span> Exportar bitacora (Word)</div>
+        <div class="card-title"><span>&#128218;</span> Exportar bit&aacute;cora (Word)</div>
         <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;font-style:italic">Incluye textos e imagenes. Tipografia Times New Roman.</p>
         <div class="flex-row">
-          <button class="btn btn-sm btn-primary" onclick="exportBitacoraWord('cronicas')">Exportar Cronicas (.docx)</button>
+          <button class="btn btn-sm btn-primary" onclick="exportBitacoraWord('cronicas')">Exportar Cr&oacute;nicas (.docx)</button>
           <button class="btn btn-sm btn-primary" onclick="exportBitacoraWord('cosechas')">Exportar Cosechas (.docx)</button>
         </div>
       </div>
@@ -523,7 +502,7 @@ input[type="file"]{display:none}
     <div class="card">
       <div class="card-title"><span>&#128236;</span> Registrar gasto</div>
       <label>Descripcion</label><input type="text" id="gasto-desc" placeholder="Ej: Almuerzo en Roma">
-      <label>Categoria</label>
+      <label>Categor&iacute;a</label>
       <select id="gasto-cat"><option>Alimentacion</option><option>Alojamiento</option><option>Articulos religiosos</option><option>Comunicaciones</option><option>Entradas / museos</option><option>Indumentaria</option><option>Otros</option><option>Salud</option><option>Souvenirs</option><option>Transporte</option></select>
       <label>Monto</label>
       <div style="display:flex;gap:8px"><select id="gasto-moneda" style="width:80px;margin-bottom:0"><option value="EUR">EUR</option><option value="ARS">ARS</option></select><input type="number" id="gasto-monto" placeholder="0.00" style="flex:1;margin-bottom:8px"></div>
@@ -540,7 +519,7 @@ input[type="file"]{display:none}
     <div class="card">
       <div class="card-title"><span>&#128202;</span> Panel de gastos</div>
       <div style="margin-bottom:14px">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);margin-bottom:6px">Gastos por categoria (equiv. EUR)</div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);margin-bottom:6px">Gastos por categor&iacute;a (equiv. EUR)</div>
         <canvas id="chart-categoria" height="220"></canvas>
       </div>
       <div style="margin-bottom:10px">
@@ -556,15 +535,15 @@ input[type="file"]{display:none}
     <div class="section-title"><span>&#128591;</span> Intenciones</div>
     <div class="card">
       <div class="card-title"><span>&#128194;</span> Cargar desde Excel</div>
-      <p style="font-size:13px;color:var(--ink3);margin-bottom:4px;font-style:italic">Columnas: intencion, autor, fecha</p>
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:4px;font-style:italic">Columnas: intenci&oacute;n, autor, fecha</p>
       <p style="font-size:12px;color:var(--ink3);margin-bottom:8px">Formato fecha: YYYY-MM-DD (ej: 2025-07-15). Formatea esa columna como Texto en Excel.</p>
       <button class="btn" onclick="document.getElementById('file-intenciones').click()">Seleccionar .xlsx</button>
       <input type="file" id="file-intenciones" accept=".xlsx,.xls,.csv" onchange="loadIntenciones(this)">
     </div>
     <div class="card">
-      <div class="card-title"><span>+</span> Agregar intencion</div>
-      <label>Intencion</label>
-      <textarea id="int-texto" placeholder="Escribi la intencion..." style="min-height:60px"></textarea>
+      <div class="card-title"><span>+</span> Agregar intenci&oacute;n</div>
+      <label>Intenci&oacute;n</label>
+      <textarea id="int-texto" placeholder="Escrib&iacute; la intenci&oacute;n..." style="min-height:60px"></textarea>
       <label>Autor</label><input type="text" id="int-autor" placeholder="Nombre de quien pide">
       <label>Fecha (vacio = general)</label><input type="date" id="int-fecha">
       <button class="btn btn-primary" style="width:100%;margin-top:4px;justify-content:center" onclick="addIntencion()">+ Agregar</button>
@@ -602,18 +581,17 @@ input[type="file"]{display:none}
       </div>
       <div class="sep"></div>
       <div class="card-title" style="margin-top:.5rem"><span>&#9881;</span> Fechas del viaje</div>
-      <label>Primer dia del viaje</label>
+      <label>Primer d&iacute;a del viaje</label>
       <input type="date" id="trip-start-input">
-      <label>Ultimo dia del viaje</label>
+      <label>&Uacute;ltimo d&iacute;a del viaje</label>
       <input type="date" id="trip-end-input">
       <button class="btn btn-primary btn-sm" onclick="saveTripDates()">Guardar fechas</button>
       <div id="trip-duration-info" style="font-size:12px;color:var(--ink3);margin-top:8px;font-style:italic"></div>
     </div>
     <div class="card">
       <div class="card-title"><span>&#127769;</span> Apariencia</div>
-      <p style="font-size:12px;color:var(--ink3);margin-bottom:10px">Elegi como se ve la app. "Automatico" sigue la configuracion de tu dispositivo.</p>
-      <div class="theme-options" id="theme-options">
-        <button class="theme-opt" data-theme="auto" onclick="setTheme('auto')"><span class="theme-opt-ico">&#9728;&#65039;&#127769;</span><span>Automatico</span></button>
+      <p style="font-size:12px;color:var(--ink3);margin-bottom:10px">Elegí cómo se ve la app en este dispositivo. La preferencia se guarda solo aquí, así que podés usar un modo distinto en cada celular o computadora.</p>
+      <div class="theme-options" id="theme-options" style="grid-template-columns:repeat(2,1fr)">
         <button class="theme-opt" data-theme="light" onclick="setTheme('light')"><span class="theme-opt-ico">&#9728;&#65039;</span><span>Claro</span></button>
         <button class="theme-opt" data-theme="dark" onclick="setTheme('dark')"><span class="theme-opt-ico">&#127769;</span><span>Oscuro</span></button>
       </div>
@@ -624,18 +602,18 @@ input[type="file"]{display:none}
       <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="saveProfileName()">Guardar nombre</button>
     </div>
     <div class="card">
-      <div class="card-title"><span>&#128273;</span> Cambiar contrasena</div>
-      <label>Contrasena actual</label><input type="password" id="pass-current" placeholder="........">
-      <label>Nueva contrasena</label><input type="password" id="pass-new" placeholder="Minimo 6 caracteres">
-      <label>Confirmar nueva contrasena</label><input type="password" id="pass-new2" placeholder="Repeti la nueva">
+      <div class="card-title"><span>&#128273;</span> Cambiar contrase&ntilde;a</div>
+      <label>Contrase&ntilde;a actual</label><input type="password" id="pass-current" placeholder="........">
+      <label>Nueva contrase&ntilde;a</label><input type="password" id="pass-new" placeholder="M&iacute;nimo 6 caracteres">
+      <label>Confirmar nueva contrase&ntilde;a</label><input type="password" id="pass-new2" placeholder="Repet&iacute; la nueva">
       <div class="auth-error" id="pass-error" style="margin:0 0 8px"></div>
       <div class="auth-success" id="pass-success" style="margin:0 0 8px"></div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="savePassword()">Cambiar contrasena</button>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="savePassword()">Cambiar contrase&ntilde;a</button>
     </div>
     <div class="card">
-      <div class="card-title"><span>&#128161;</span> Guia de la app</div>
-      <p style="font-size:12px;color:var(--ink3);margin-bottom:10px">Volve a ver la presentacion inicial con la explicacion de cada seccion.</p>
-      <button class="btn" style="width:100%;justify-content:center" onclick="openOnboardingManually()">Ver guia de la app</button>
+      <div class="card-title"><span>&#128161;</span> Gu&iacute;a de la app</div>
+      <p style="font-size:12px;color:var(--ink3);margin-bottom:10px">Volv&eacute; a ver la presentaci&oacute;n inicial con la explicaci&oacute;n de cada secci&oacute;n.</p>
+      <button class="btn" style="width:100%;justify-content:center" onclick="openOnboardingManually()">Ver gu&iacute;a de la app</button>
     </div>
     <div class="card">
       <div class="card-title"><span>&#128276;</span> Notificaciones</div>
@@ -647,9 +625,9 @@ input[type="file"]{display:none}
       <div id="notif-form" style="display:none">
         <div class="sep"></div>
         <div class="card-title" style="margin-top:8px"><span>&#128336;</span> Recordatorios diarios personalizados</div>
-        <p style="font-size:12px;color:var(--ink3);margin-bottom:8px">Se repiten cada dia a la misma hora.</p>
+        <p style="font-size:12px;color:var(--ink3);margin-bottom:8px">Se repiten cada d&iacute;a a la misma hora.</p>
         <label>Mensaje</label>
-        <input type="text" id="notif-msg" placeholder="Ej: Hora de la oracion de la tarde">
+        <input type="text" id="notif-msg" placeholder="Ej: Hora de la oraci&oacute;n de la tarde">
         <label>Hora</label>
         <input type="time" id="notif-hora">
         <button class="btn btn-accent btn-sm" onclick="addNotifSchedule()" style="width:100%;justify-content:center;margin-bottom:4px">Agregar recordatorio</button>
@@ -665,22 +643,22 @@ input[type="file"]{display:none}
           <option value="120">2 horas antes</option>
           <option value="300">5 horas antes</option>
         </select>
-        <button class="btn btn-accent btn-sm" onclick="saveNotifCronoConfig()" style="width:100%;justify-content:center">Guardar configuracion</button>
+        <button class="btn btn-accent btn-sm" onclick="saveNotifCronoConfig()" style="width:100%;justify-content:center">Guardar configuraci&oacute;n</button>
         <div id="notif-crono-status" style="font-size:12px;color:var(--teal);margin-top:6px"></div>
       </div>
     </div>
     <div class="card">
       <div class="card-title"><span>&#128231;</span> Resumen diario por email</div>
-      <p style="font-size:12px;color:var(--ink3);margin-bottom:10px">Recibi un correo todos los dias con las actividades de tu cronograma. Funciona aunque no tengas la app abierta, incluso en iPhone.</p>
+      <p style="font-size:12px;color:var(--ink3);margin-bottom:10px">Recib&iacute; un correo todos los d&iacute;as con las actividades de tu cronograma. Funciona aunque no tengas la app abierta, incluso en iPhone.</p>
       <div class="remember-row" style="margin-bottom:12px">
         <input type="checkbox" id="resumen-activado">
         <label for="resumen-activado">Activar resumen diario</label>
       </div>
       <label>Hora del envio</label>
       <input type="time" id="resumen-hora" value="07:00">
-      <label>Correo de destino (vacio = tu correo de cuenta)</label>
+      <label>Correo de destino (vac&iacute;o = tu correo de cuenta)</label>
       <input type="email" id="resumen-email" placeholder="tu-correo@ejemplo.com">
-      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="saveResumenDiario()">Guardar configuracion</button>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="saveResumenDiario()">Guardar configuraci&oacute;n</button>
       <div id="resumen-status" style="font-size:12px;color:var(--teal);margin-top:8px"></div>
     </div>
   </div>
@@ -691,7 +669,7 @@ input[type="file"]{display:none}
   <div class="modal">
     <div class="modal-title" id="modal-vuelo-title">Agregar vuelo <button class="modal-close" onclick="closeModal('modal-vuelo')">X</button></div>
     <label>Ruta</label><input type="text" id="vuelo-ruta" placeholder="Ciudad origen - Ciudad destino">
-    <label>Aerolinea y numero de vuelo</label><input type="text" id="vuelo-aerolinea" placeholder="Ej: Iberia IB1234">
+    <label>Aerol&iacute;nea y n&uacute;mero de vuelo</label><input type="text" id="vuelo-aerolinea" placeholder="Ej: Iberia IB1234">
     <label>Fecha del vuelo</label><input type="date" id="vuelo-fecha">
     <label>Salida</label><input type="datetime-local" id="vuelo-salida">
     <label>Llegada</label><input type="datetime-local" id="vuelo-llegada">
@@ -707,7 +685,7 @@ input[type="file"]{display:none}
     <div class="modal-title" id="modal-terr-title">Transporte terrestre <button class="modal-close" onclick="closeModal('modal-terrestre')">X</button></div>
     <label>Tipo</label><select id="terr-tipo"><option>Metro</option><option>Colectivo / Bus</option><option>Tren</option><option>Tranvia</option><option>Taxi / Uber</option><option>A pie</option></select>
     <label>Ciudad</label><input type="text" id="terr-ciudad" placeholder="Ej: Roma">
-    <label>Linea / Numero</label><input type="text" id="terr-linea" placeholder="Ej: Metro linea A">
+    <label>L&iacute;nea / N&uacute;mero</label><input type="text" id="terr-linea" placeholder="Ej: Metro linea A">
     <label>Lugares que recorre</label><textarea id="terr-lugares" style="min-height:60px" placeholder="Ej: Termini, Spagna..."></textarea>
     <label>Precio aprox.</label>
     <div style="display:flex;gap:8px"><select id="terr-moneda" style="width:80px;margin-bottom:0"><option value="EUR">EUR</option><option value="ARS">ARS</option></select><input type="number" id="terr-precio" placeholder="0.00" style="flex:1;margin-bottom:8px"></div>
@@ -755,8 +733,8 @@ input[type="file"]{display:none}
 <!-- MODAL EDITAR INTENCION -->
 <div class="modal-bg" id="modal-edit-int">
   <div class="modal">
-    <div class="modal-title">Editar intencion <button class="modal-close" onclick="closeModal('modal-edit-int')">X</button></div>
-    <label>Intencion</label>
+    <div class="modal-title">Editar intenci&oacute;n <button class="modal-close" onclick="closeModal('modal-edit-int')">X</button></div>
+    <label>Intenci&oacute;n</label>
     <textarea id="edit-int-texto" style="min-height:80px"></textarea>
     <label>Autor</label><input type="text" id="edit-int-autor">
     <label>Fecha (vacio = general)</label><input type="date" id="edit-int-fecha">
@@ -770,7 +748,7 @@ input[type="file"]{display:none}
   <div class="modal">
     <div class="modal-title" id="modal-new-trip-title">Nuevo viaje <button class="modal-close" onclick="closeModal('modal-new-trip')">X</button></div>
     <label>Nombre del viaje</label>
-    <input type="text" id="new-trip-nombre" placeholder="Ej: Peregrinacion 2027" maxlength="60">
+    <input type="text" id="new-trip-nombre" placeholder="Ej: Peregrinaci&oacute;n 2027" maxlength="60">
     <input type="hidden" id="new-trip-mode" value="create">
     <input type="hidden" id="new-trip-editing-id" value="">
     <div class="flex-row" style="margin-top:8px"><button class="btn" onclick="closeModal('modal-new-trip')">Cancelar</button><button class="btn btn-primary" onclick="confirmNewTripModal()">Guardar</button></div>
@@ -778,16 +756,16 @@ input[type="file"]{display:none}
 </div>
 
 <!-- ONBOARDING: presentacion inicial de la app -->
-<div id="onboarding-overlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:600;flex-direction:column">
+<div id="onboarding-overlay" style="display:none;position:fixed;inset:0;background:var(--modal-overlay);z-index:600;flex-direction:column;backdrop-filter:blur(2px)">
   <div style="display:flex;justify-content:flex-end;padding:14px 16px 0">
-    <button onclick="skipOnboarding()" style="background:none;border:none;color:var(--ink3);font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;padding:8px">Saltar</button>
+    <button onclick="skipOnboarding()" style="background:rgba(255,255,255,.12);border:none;color:#fdf6e9;font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;padding:8px 14px;border-radius:20px">Saltar</button>
   </div>
-  <div id="onboarding-slides" style="flex:1;display:flex;align-items:center;justify-content:center;padding:0 28px;overflow:hidden">
+  <div id="onboarding-slides" style="flex:1;display:flex;align-items:center;justify-content:center;padding:0 20px;overflow:hidden">
     <!-- las tarjetas se inyectan por JS -->
   </div>
   <div style="display:flex;justify-content:center;gap:7px;padding:10px 0" id="onboarding-dots"></div>
   <div style="display:flex;gap:10px;padding:16px 24px calc(24px + env(safe-area-inset-bottom))">
-    <button class="btn" id="onboarding-back" onclick="onboardingPrev()" style="flex:1;justify-content:center">Atras</button>
+    <button class="btn" id="onboarding-back" onclick="onboardingPrev()" style="flex:1;justify-content:center;background:var(--card-bg-strong)">Atr&aacute;s</button>
     <button class="btn btn-primary" id="onboarding-next" onclick="onboardingNext()" style="flex:2;justify-content:center">Siguiente</button>
   </div>
 </div>
@@ -863,30 +841,23 @@ function setTheme(modo){
 }
 
 function toggleThemeQuick(){
-  var actual=lsGet('theme')||'auto';
-  // La perilla alterna entre claro y oscuro solamente.
-  // "auto" se considera claro si el sistema es claro, oscuro si es oscuro.
-  var sistemaOscuro=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches;
-  var esOscuro=(actual==='dark')||(actual==='auto'&&sistemaOscuro);
-  setTheme(esOscuro?'light':'dark');
+  var actual=lsGet('theme')||'light';
+  setTheme(actual==='dark'?'light':'dark');
 }
 
 function actualizarIconoTema(modo){
   var thumb=document.getElementById('theme-toggle-thumb');
   var track=document.getElementById('theme-toggle-track');
   if(!thumb||!track)return;
-  // Detectar si el sistema tiene modo oscuro (para el caso "auto")
-  var sistemaOscuro=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches;
-  var esOscuro=(modo==='dark')||(modo==='auto'&&sistemaOscuro);
+  var esOscuro=modo==='dark';
   // Perilla a la derecha = noche, a la izquierda = dia
   thumb.style.transform=esOscuro?'translateX(16px)':'translateX(0)';
   track.style.background=esOscuro?'rgba(255,255,255,.5)':'rgba(255,255,255,.25)';
 }
 
 function aplicarTema(modo){
-  document.body.classList.remove('theme-dark','theme-light');
+  document.body.classList.remove('theme-dark');
   if(modo==='dark')document.body.classList.add('theme-dark');
-  else if(modo==='light')document.body.classList.add('theme-light');
 }
 
 function actualizarBotonesTema(modo){
@@ -896,7 +867,7 @@ function actualizarBotonesTema(modo){
 }
 
 function applyStoredTheme(){
-  var modo=lsGet('theme')||'auto';
+  var modo=lsGet('theme')||'light';
   aplicarTema(modo);
   actualizarBotonesTema(modo);
   actualizarIconoTema(modo);
@@ -912,18 +883,18 @@ function doLogin(){
   var email=document.getElementById('login-email').value.trim().toLowerCase();
   var pass=document.getElementById('login-pass').value;
   hideErr('login-error');
-  if(!email||!pass){showErr('login-error','Completa correo y contrasena.');return;}
+  if(!email||!pass){showErr('login-error','Completa correo y contraseña.');return;}
   var btn=document.getElementById('btn-login');btn.disabled=true;btn.textContent='Verificando...';
   showLoading('Verificando cuenta...');
   sbGet(email).then(function(u){
     if(!u){showErr('login-error','No existe cuenta con ese correo.');return;}
-    if(u.password_hash!==hashPass(pass)){showErr('login-error','Contrasena incorrecta.');return;}
+    if(u.password_hash!==hashPass(pass)){showErr('login-error','Contraseña incorrecta.');return;}
     currentUser=email;currentHash=u.password_hash;currentName=u.name;
     tripsBox=normalizeTripsBox(u.data);
     appState=getActiveTrip(tripsBox);
     if(document.getElementById('login-remember').checked)lsSet('session',{user:email});
     hideLoading();showApp();
-  }).catch(function(){showErr('login-error','Error de conexion.');})
+  }).catch(function(){showErr('login-error','Error de conexión.');})
   .then(function(){btn.disabled=false;btn.textContent='Ingresar';hideLoading();});
 }
 
@@ -933,10 +904,10 @@ function doRegister(){
   var pass=document.getElementById('reg-pass').value;
   var pass2=document.getElementById('reg-pass2').value;
   hideErr('reg-error');document.getElementById('reg-success').style.display='none';
-  if(!name){showErr('reg-error','Ingresa tu nombre.');return;}
-  if(!email||!email.includes('@')){showErr('reg-error','Correo invalido.');return;}
-  if(pass.length<6){showErr('reg-error','Minimo 6 caracteres.');return;}
-  if(pass!==pass2){showErr('reg-error','Las contrasenas no coinciden.');return;}
+  if(!name){showErr('reg-error','Ingresá tu nombre.');return;}
+  if(!email||!email.includes('@')){showErr('reg-error','Correo inválido.');return;}
+  if(pass.length<6){showErr('reg-error','Mínimo 6 caracteres.');return;}
+  if(pass!==pass2){showErr('reg-error','Las contraseñas no coinciden.');return;}
   var btn=document.getElementById('btn-register');btn.disabled=true;btn.textContent='Creando...';
   showLoading('Creando cuenta...');
   var h=hashPass(pass);var initState=freshState();
@@ -1068,7 +1039,7 @@ function renderTripStatus(now){
   if(hoyMidnight<start){
     // El viaje todavia no empezo
     var diasFaltan=Math.ceil((start-hoyMidnight)/86400000);
-    el.innerHTML='<div class="trip-countdown-card"><div class="trip-countdown-num">'+diasFaltan+'</div><div class="trip-countdown-txt">'+(diasFaltan===1?'Falta 1 dia para empezar tu peregrinacion':'Faltan '+diasFaltan+' dias para empezar tu peregrinacion')+'</div></div>';
+    el.innerHTML='<div class="trip-countdown-card"><div class="trip-countdown-num">'+diasFaltan+'</div><div class="trip-countdown-txt">'+(diasFaltan===1?'Falta 1 d&iacute;a para empezar tu peregrinaci&oacute;n':'Faltan '+diasFaltan+' d&iacute;as para empezar tu peregrinaci&oacute;n')+'</div></div>';
     return;
   }
 
@@ -1084,7 +1055,7 @@ function renderTripStatus(now){
 
   if(diaActual>totalDias){
     // El viaje ya termino
-    el.innerHTML='<div class="trip-countdown-card"><div class="trip-countdown-txt">Tu peregrinacion ya ha concluido. Gracias por compartir este camino.</div></div>';
+    el.innerHTML='<div class="trip-countdown-card"><div class="trip-countdown-txt">Tu peregrinaci&oacute;n ya ha concluido. Gracias por compartir este camino.</div></div>';
     return;
   }
 
@@ -1093,9 +1064,9 @@ function renderTripStatus(now){
   var diasRestantes=totalDias-diaMostrado;
 
   el.innerHTML='<div class="trip-progress-card">'+
-    '<div class="trip-progress-label">Dia '+diaMostrado+' de '+totalDias+'</div>'+
+    '<div class="trip-progress-label">D&iacute;a '+diaMostrado+' de '+totalDias+'</div>'+
     '<div class="trip-progress-bar-bg"><div class="trip-progress-bar-fill" style="width:'+porcentaje+'%"></div></div>'+
-    '<div class="trip-progress-sub">'+porcentaje+'% completado'+(diasRestantes>0?' &mdash; '+diasRestantes+' dia'+(diasRestantes===1?'':'s')+' para terminar':' &mdash; ultimo dia')+'</div>'+
+    '<div class="trip-progress-sub">'+porcentaje+'% completado'+(diasRestantes>0?' &mdash; '+diasRestantes+' d&iacute;a'+(diasRestantes===1?'':'s')+' para terminar':' &mdash; &uacute;ltimo d&iacute;a')+'</div>'+
     '</div>';
 }
 
@@ -1144,7 +1115,7 @@ function openCronoFull(){
 
 function borrarTodoCrono(){
   if(!appState.cronograma.length){showToast('No hay actividades para borrar');return;}
-  if(confirm('Esto va a borrar TODO el cronograma (todas las actividades de todos los dias). Esta accion no se puede deshacer. Continuar?')){
+  if(confirm('Esto va a borrar TODO el cronograma (todas las actividades de todos los días). Esta acción no se puede deshacer. ¿Continuar?')){
     appState.cronograma=[];saveState();renderHome();openCronoFull();showToast('Cronograma borrado');
   }
 }
@@ -1174,7 +1145,7 @@ function removePhoto(type,idx){var key=getDayKey(appState.currentDay);appState.d
 function generarMinuta(){
   var key=getDayKey(appState.currentDay);
   var cronica=(appState.days[key]||{}).cronica||'';
-  if(!cronica.trim()){showToast('Primero escribi la cronica del dia');return;}
+  if(!cronica.trim()){showToast('Primero escribí la crónica del día');return;}
   var btn=document.getElementById('btn-generar-minuta');btn.disabled=true;
   document.getElementById('minuta-loading').style.display='flex';
   document.getElementById('minuta-result').style.display='none';
@@ -1251,7 +1222,7 @@ function exportBitacoraWord(tipo){
   if(window.docx){doExportWord(tipo);return;}
   var s=document.createElement('script');s.src='https://unpkg.com/docx@8.5.0/build/index.umd.js';
   s.onload=function(){doExportWord(tipo);};
-  s.onerror=function(){var s2=document.createElement('script');s2.src='https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js';s2.onload=function(){doExportWord(tipo);};s2.onerror=function(){showToast('No se pudo cargar la libreria Word');};document.head.appendChild(s2);};
+  s.onerror=function(){var s2=document.createElement('script');s2.src='https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js';s2.onload=function(){doExportWord(tipo);};s2.onerror=function(){showToast('No se pudo cargar la librería Word');};document.head.appendChild(s2);};
   document.head.appendChild(s);
 }
 function doExportWord(tipo){
@@ -1301,7 +1272,7 @@ function openModalVuelo(idx){
 }
 function saveVuelo(){
   var v={ruta:val('vuelo-ruta'),aerolinea:val('vuelo-aerolinea'),fecha:val('vuelo-fecha'),salida:val('vuelo-salida'),llegada:val('vuelo-llegada'),terminal:val('vuelo-terminal'),notas:val('vuelo-notas')};
-  if(!v.ruta){showToast('Ingresa la ruta');return;}
+  if(!v.ruta){showToast('Ingresá la ruta');return;}
   var idx=parseInt(document.getElementById('vuelo-edit-idx').value);
   if(idx>=0){v.id=appState.vuelos[idx].id||genId();appState.vuelos[idx]=v;}else{v.id=genId();appState.vuelos.push(v);}
   syncFlightCrono(v);
@@ -1414,7 +1385,7 @@ function extractFlightsWithGemini(text){
       document.getElementById('vuelo-pdf-msg').textContent=count2+' vuelo(s) detectados (sin IA). IMPORTANTE: revisa y completa cada dato, especialmente origen y destino.';
       showToast(count2+' vuelo(s) detectados - revisa los datos');
     }else{
-      document.getElementById('vuelo-pdf-msg').textContent='No se detectaron vuelos automaticamente. Cargalos manualmente con "+ Agregar vuelo".';
+      document.getElementById('vuelo-pdf-msg').textContent='No se detectaron vuelos automáticamente. Cargalos manualmente con "+ Agregar vuelo".';
     }
   });
 }
@@ -1462,7 +1433,7 @@ function extractFlightsLocally(text){
       salida:fecha&&times[0]?fecha+'T'+times[0]:'',
       llegada:fecha&&times[1]?fecha+'T'+times[1]:'',
       terminal:'',
-      notas:'Detectado automaticamente - revisar y completar'
+      notas:'Detectado automáticamente - revisar y completar'
     });
   }
   return flights;
@@ -1518,7 +1489,7 @@ function openModalTerrestre(idx){
 }
 function saveTerrestre(){
   var t={tipo:val('terr-tipo'),ciudad:val('terr-ciudad'),linea:val('terr-linea'),lugares:val('terr-lugares'),precio:val('terr-precio'),moneda:val('terr-moneda'),notas:val('terr-notas')};
-  if(!t.ciudad){showToast('Ingresa la ciudad');return;}
+  if(!t.ciudad){showToast('Ingresá la ciudad');return;}
   var idx=parseInt(document.getElementById('terr-edit-idx').value);
   if(idx>=0){appState.terrestres[idx]=t;}else{appState.terrestres.push(t);}
   appState.terrestres.sort(function(a,b){return (a.ciudad||'').localeCompare(b.ciudad||'');});
@@ -1542,7 +1513,7 @@ function fetchEuro(force){
 function saveEuro(r,d,s){appState.euroRate=r;appState.euroDate=d;appState.euroSource=s;saveState();showEuroRate(r,d,s);}
 function showEuroRate(r,d,s){document.getElementById('euro-val').textContent='$ '+parseFloat(r).toLocaleString('es-AR',{maximumFractionDigits:2});document.getElementById('euro-date').textContent=(s?s+' - ':'')+d;}
 function calcConvert(){var a=parseFloat(document.getElementById('calc-amount').value)||0;var f=document.getElementById('calc-from').value;var r=appState.euroRate||0;if(!r){document.getElementById('calc-result').textContent='= (actualizar)';return;}document.getElementById('calc-result').textContent=f==='eur'?'= $ '+(a*r).toLocaleString('es-AR',{maximumFractionDigits:0}):'= EUR '+(a/r).toFixed(2);}
-function addGasto(){var g={desc:val('gasto-desc'),cat:val('gasto-cat'),monto:val('gasto-monto'),moneda:val('gasto-moneda'),medio:val('gasto-medio'),fecha:todayStr()};if(!g.desc||!g.monto){showToast('Completa descripcion y monto');return;}appState.gastos.push(g);renderGastos();saveState();document.getElementById('gasto-desc').value='';document.getElementById('gasto-monto').value='';}
+function addGasto(){var g={desc:val('gasto-desc'),cat:val('gasto-cat'),monto:val('gasto-monto'),moneda:val('gasto-moneda'),medio:val('gasto-medio'),fecha:todayStr()};if(!g.desc||!g.monto){showToast('Completá descripción y monto');return;}appState.gastos.push(g);renderGastos();saveState();document.getElementById('gasto-desc').value='';document.getElementById('gasto-monto').value='';}
 function renderGastos(){
   var list=document.getElementById('gastos-list'),summary=document.getElementById('gastos-summary');
   if(!appState.gastos.length){list.innerHTML='<div class="empty-state"><span class="eico">&#128236;</span>Sin gastos registrados</div>';summary.innerHTML='';document.getElementById('gastos-export-btn').style.display='none';}
@@ -1659,7 +1630,7 @@ function exportGastosExcel(){
   XLSX.writeFile(wb,'gastos_ruta_calasanz.xlsx');showToast('Excel descargado');
 }
 
-function addIntencion(){var i={texto:val('int-texto'),autor:val('int-autor')||'Anonimo',fecha:val('int-fecha')||null};if(!i.texto){showToast('Ingresa la intencion');return;}appState.intenciones.push(i);sortIntenciones();renderIntenciones();saveState();document.getElementById('int-texto').value='';document.getElementById('int-autor').value='';document.getElementById('int-fecha').value='';}
+function addIntencion(){var i={texto:val('int-texto'),autor:val('int-autor')||'Anonimo',fecha:val('int-fecha')||null};if(!i.texto){showToast('Ingresá la intención');return;}appState.intenciones.push(i);sortIntenciones();renderIntenciones();saveState();document.getElementById('int-texto').value='';document.getElementById('int-autor').value='';document.getElementById('int-fecha').value='';}
 
 function sortIntenciones(){
   appState.intenciones.sort(function(a,b){
@@ -1669,7 +1640,7 @@ function sortIntenciones(){
 
 function borrarTodoIntenciones(){
   if(!appState.intenciones.length){showToast('No hay intenciones para borrar');return;}
-  if(confirm('Esto va a borrar TODAS las intenciones cargadas. Esta accion no se puede deshacer. Continuar?')){
+  if(confirm('Esto va a borrar TODAS las intenciones cargadas. Esta acción no se puede deshacer. ¿Continuar?')){
     appState.intenciones=[];renderIntenciones();saveState();renderHome();showToast('Intenciones borradas');
   }
 }
@@ -1726,13 +1697,13 @@ function openEditIntencion(idx){
 function saveEditIntencion(){
   var idx=parseInt(document.getElementById('edit-int-idx').value);
   appState.intenciones[idx]={texto:val('edit-int-texto'),autor:val('edit-int-autor')||'Anonimo',fecha:val('edit-int-fecha')||null};
-  sortIntenciones();renderIntenciones();saveState();closeModal('modal-edit-int');showToast('Intencion actualizada');
+  sortIntenciones();renderIntenciones();saveState();closeModal('modal-edit-int');showToast('Intención actualizada');
 }
 
 function doTranslateNow(){
   var langs=['es','en','it','fr'];var text='';var fromLang='es';
   for(var i=0;i<langs.length;i++){var v=document.getElementById('trad-'+langs[i]).value.trim();if(v){text=v;fromLang=langs[i];break;}}
-  if(!text){showToast('Escribi algo primero');return;}
+  if(!text){showToast('Escribí algo primero');return;}
   var btn=document.getElementById('btn-translate');btn.disabled=true;btn.textContent='Traduciendo...';
   var others=langs.filter(function(l){return l!==fromLang;});
   others.forEach(function(l){document.getElementById('load-'+l).style.display='block';document.getElementById('trad-'+l).value='';});
@@ -1772,7 +1743,7 @@ function openEditCrono(idx){
 
 function saveCrono(){
   var c={hora:val('crono-hora'),desc:val('crono-desc'),lugar:val('crono-lugar'),maps:val('crono-maps'),fecha:val('crono-fecha')||todayStr()};
-  if(!c.hora||!c.desc){showToast('Ingresa hora y descripcion');return;}
+  if(!c.hora||!c.desc){showToast('Ingresá hora y descripción');return;}
   var idx=parseInt(document.getElementById('crono-edit-idx').value);
   if(idx>=0){appState.cronograma[idx]=c;}else{appState.cronograma.push(c);}
   saveState();closeModal('modal-crono');renderHome();
@@ -1818,7 +1789,7 @@ function loadCronoXLSX(input){
   r.onerror=function(){document.getElementById('crono-excel-msg').textContent='Error al leer el archivo.';};r.readAsBinaryString(file);input.value='';
 }
 
-function renderPerfil(){document.getElementById('profile-name-display').textContent=currentName||currentUser;document.getElementById('profile-email-display').textContent=currentUser;document.getElementById('profile-avatar').textContent=(currentName||currentUser).charAt(0).toUpperCase();document.getElementById('edit-name').value=currentName||'';document.getElementById('trip-start-input').value=appState.tripStart||'';document.getElementById('trip-end-input').value=appState.tripEnd||'';mostrarDuracionViaje();renderNotifStatus();scheduleAllNotifs();renderResumenDiario();actualizarBotonesTema(lsGet('theme')||'auto');}
+function renderPerfil(){document.getElementById('profile-name-display').textContent=currentName||currentUser;document.getElementById('profile-email-display').textContent=currentUser;document.getElementById('profile-avatar').textContent=(currentName||currentUser).charAt(0).toUpperCase();document.getElementById('edit-name').value=currentName||'';document.getElementById('trip-start-input').value=appState.tripStart||'';document.getElementById('trip-end-input').value=appState.tripEnd||'';mostrarDuracionViaje();renderNotifStatus();scheduleAllNotifs();renderResumenDiario();actualizarBotonesTema(lsGet('theme')||'light');}
 
 function renderResumenDiario(){
   var cfg=appState.resumenDiario||{activado:false,hora:'07:00',emailDestino:'',zona:''};
@@ -1839,16 +1810,16 @@ function saveResumenDiario(){
   saveState();
   var st=document.getElementById('resumen-status');
   if(activado){
-    st.textContent='Activado. Vas a recibir el resumen todos los dias a las '+hora+' (zona horaria detectada: '+zona+').';
+    st.textContent='Activado. Vas a recibir el resumen todos los días a las '+hora+' (zona horaria detectada: '+zona+').';
   }else{
     st.textContent='Resumen diario desactivado.';
   }
-  showToast('Configuracion guardada');
+  showToast('Configuración guardada');
 }
 function saveTripDates(){
   var dStart=val('trip-start-input');
   var dEnd=val('trip-end-input');
-  if(!dStart){showToast('Selecciona la fecha de inicio');return;}
+  if(!dStart){showToast('Seleccioná la fecha de inicio');return;}
   if(dEnd&&dEnd<dStart){showToast('La fecha de fin no puede ser anterior a la de inicio');return;}
   appState.tripStart=dStart;
   appState.tripEnd=dEnd||'';
@@ -1865,11 +1836,11 @@ function mostrarDuracionViaje(){
     var dias=getDuracionViaje();
     el.textContent='Tu viaje dura '+dias+' dia'+(dias===1?'':'s')+'.';
   }else{
-    el.textContent='Completa ambas fechas para calcular la duracion total del viaje.';
+    el.textContent='Completa ambas fechas para calcular la duración total del viaje.';
   }
 }
-function saveProfileName(){var name=val('edit-name').trim();if(!name){showToast('Ingresa un nombre');return;}currentName=name;sbUpsert(currentUser,currentHash,currentName,appState).then(function(){renderPerfil();showToast('Nombre actualizado');}).catch(function(){showToast('Error al guardar');});}
-function savePassword(){var curr=document.getElementById('pass-current').value;var nw=document.getElementById('pass-new').value;var nw2=document.getElementById('pass-new2').value;var err=document.getElementById('pass-error'),ok=document.getElementById('pass-success');err.style.display='none';ok.style.display='none';if(hashPass(curr)!==currentHash){showErr('pass-error','Contrasena actual incorrecta.');return;}if(nw.length<6){showErr('pass-error','Minimo 6 caracteres.');return;}if(nw!==nw2){showErr('pass-error','Las contrasenas no coinciden.');return;}var newHash=hashPass(nw);sbUpsert(currentUser,newHash,currentName,appState).then(function(){currentHash=newHash;ok.textContent='Contrasena cambiada';ok.style.display='block';document.getElementById('pass-current').value='';document.getElementById('pass-new').value='';document.getElementById('pass-new2').value='';}).catch(function(){showErr('pass-error','Error al guardar.');});}
+function saveProfileName(){var name=val('edit-name').trim();if(!name){showToast('Ingresá un nombre');return;}currentName=name;sbUpsert(currentUser,currentHash,currentName,appState).then(function(){renderPerfil();showToast('Nombre actualizado');}).catch(function(){showToast('Error al guardar');});}
+function savePassword(){var curr=document.getElementById('pass-current').value;var nw=document.getElementById('pass-new').value;var nw2=document.getElementById('pass-new2').value;var err=document.getElementById('pass-error'),ok=document.getElementById('pass-success');err.style.display='none';ok.style.display='none';if(hashPass(curr)!==currentHash){showErr('pass-error','Contraseña actual incorrecta.');return;}if(nw.length<6){showErr('pass-error','Mínimo 6 caracteres.');return;}if(nw!==nw2){showErr('pass-error','Las contraseñas no coinciden.');return;}var newHash=hashPass(nw);sbUpsert(currentUser,newHash,currentName,appState).then(function(){currentHash=newHash;ok.textContent='Contraseña cambiada';ok.style.display='block';document.getElementById('pass-current').value='';document.getElementById('pass-new').value='';document.getElementById('pass-new2').value='';}).catch(function(){showErr('pass-error','Error al guardar.');});}
 
 function openModal(id){
   document.getElementById(id).classList.add('open');
@@ -1879,13 +1850,13 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 // ===== ONBOARDING: presentacion inicial de la app =====
 var ONB_SLIDES=[
-  {icon:'&#10011;',title:'Bienvenido a Itineritas',text:'Tu companera de viaje para la peregrinacion. Te mostramos en breve para que sirve cada seccion, asi le sacas el maximo provecho desde el primer dia.'},
-  {icon:'&#127968;',title:'Inicio',text:'De un vistazo: el dia del viaje en que estas, lo que toca hacer hoy segun el cronograma, las intenciones del dia y un resumen de tus gastos.'},
-  {icon:'&#128218;',title:'Bitacora',text:'Escribi la cronica de cada dia con tus fotos y reflexiones. La app puede armarte automaticamente un resumen corto para compartir por WhatsApp.'},
-  {icon:'&#9992;',title:'Transporte',text:'Cargá tus vuelos (hasta podes subir el PDF del pasaje y se completan solos) y los traslados terrestres. Todo se refleja en tu cronograma automaticamente.'},
-  {icon:'&#128176;',title:'Finanzas',text:'Segui el tipo de cambio actualizado, registra tus gastos por categoria y mira en que se te va la plata con graficos simples.'},
-  {icon:'&#128591;',title:'Intenciones y Traductor',text:'Guarda las intenciones de oracion del grupo, y usa el traductor con dictado por voz para el dia a dia en espanol, italiano, ingles o frances.'},
-  {icon:'&#9776;',title:'Un viaje, o varios',text:'Tocando "Itineritas" arriba de todo podes crear nuevos viajes o cambiar entre los que ya tenes, sin perder informacion de ninguno.'}
+  {icon:'&#10011;',title:'Bienvenido a Itineritas',text:'Tu compa&ntilde;era de viaje para la peregrinaci&oacute;n. Te mostramos en breve para qu&eacute; sirve cada secci&oacute;n, as&iacute; le sac&aacute;s el m&aacute;ximo provecho desde el primer d&iacute;a.'},
+  {icon:'&#127968;',title:'Inicio',text:'De un vistazo: el d&iacute;a del viaje en que est&aacute;s, lo que toca hacer hoy seg&uacute;n el cronograma, las intenciones del d&iacute;a y un resumen de tus gastos.'},
+  {icon:'&#128218;',title:'Bit&aacute;cora',text:'Escrib&iacute; la cr&oacute;nica de cada d&iacute;a con tus fotos y reflexiones. La app puede armarte autom&aacute;ticamente un resumen corto para compartir por WhatsApp.'},
+  {icon:'&#9992;',title:'Transporte',text:'Carg&aacute; tus vuelos (hasta pod&eacute;s subir el PDF del pasaje y se completan solos) y los traslados terrestres. Todo se refleja en tu cronograma autom&aacute;ticamente.'},
+  {icon:'&#128176;',title:'Finanzas',text:'Segu&iacute; el tipo de cambio actualizado, registr&aacute; tus gastos por categor&iacute;a y mir&aacute; en qu&eacute; se te va la plata con gr&aacute;ficos simples.'},
+  {icon:'&#128591;',title:'Intenciones y Traductor',text:'Guard&aacute; las intenciones de oraci&oacute;n del grupo, y us&aacute; el traductor con dictado por voz para el d&iacute;a a d&iacute;a en espa&ntilde;ol, italiano, ingl&eacute;s o franc&eacute;s.'},
+  {icon:'&#9776;',title:'Un viaje, o varios',text:'Tocando "Itineritas" arriba de todo pod&eacute;s crear nuevos viajes o cambiar entre los que ya ten&eacute;s, sin perder informaci&oacute;n de ninguno.'}
 ];
 var onbIndex=0;
 
@@ -2065,7 +2036,7 @@ function confirmNewTripModal(){
 function deleteTrip(id){
   if(!tripsBox||Object.keys(tripsBox.trips).length<=1)return;
   var nombre=tripsBox.trips[id].nombre||'este viaje';
-  if(!confirm('Esto va a borrar el viaje "'+nombre+'" junto con TODOS sus datos (bitacora, vuelos, gastos, etc). Esta accion no se puede deshacer. Continuar?'))return;
+  if(!confirm('Esto va a borrar el viaje "'+nombre+'" junto con TODOS sus datos (bitácora, vuelos, gastos, etc). Esta acción no se puede deshacer. ¿Continuar?'))return;
   delete tripsBox.trips[id];
   if(tripsBox.activeTripId===id){
     tripsBox.activeTripId=Object.keys(tripsBox.trips)[0];
@@ -2154,7 +2125,7 @@ function enableNotifications(){
       scheduleAllNotifs();
       showToast('Notificaciones activadas');
     }else{
-      showToast('Notificaciones denegadas. Activalas en la configuracion del navegador.');
+      showToast('Notificaciones denegadas. Activalas en la configuración del navegador.');
     }
   });
 }
@@ -2166,7 +2137,7 @@ function renderNotifStatus(){
   var cronoSel=document.getElementById('notif-crono-antes');
   var cronoStatus=document.getElementById('notif-crono-status');
   if(!('Notification' in window)){
-    if(el)el.textContent='Las notificaciones no estan disponibles en este navegador.';
+    if(el)el.textContent='Las notificaciones no están disponibles en este navegador.';
     if(btnEl)btnEl.style.display='none';
     return;
   }
@@ -2199,14 +2170,14 @@ function renderNotifStatus(){
     if(el)el.innerHTML='&#10060; Notificaciones bloqueadas. Activalas en la configuracion del navegador para este sitio.';
     if(btnEl)btnEl.style.display='none';
   }else{
-    if(el)el.textContent='Las notificaciones no estan activadas todavia.';
+    if(el)el.textContent='Las notificaciones no están activadas todavía.';
     if(btnEl)btnEl.style.display='block';
   }
 }
 
 function addNotifSchedule(){
   var msg=val('notif-msg').trim();var hora=val('notif-hora');
-  if(!msg||!hora){showToast('Ingresa mensaje y hora');return;}
+  if(!msg||!hora){showToast('Ingresá mensaje y hora');return;}
   loadNotifSchedules();
   notifSchedules.push({msg:msg,hora:hora});
   saveNotifSchedules();
@@ -2237,7 +2208,7 @@ function saveNotifCronoConfig(){
       'Guardado: recibirás avisos '+sel.options[sel.selectedIndex].text+' para cada actividad.':
       'Avisos del cronograma desactivados.';
   }
-  showToast('Configuracion guardada');
+  showToast('Configuración guardada');
 }
 
 // ---- Programacion de timers ----
