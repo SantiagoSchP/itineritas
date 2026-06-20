@@ -266,6 +266,14 @@ select option{background:var(--input-bg);color:var(--ink)}
 .modal{background:var(--parchment);border-radius:var(--radius) var(--radius) 0 0;padding:1.5rem;width:100%;max-width:700px;max-height:90vh;overflow-y:auto;border-top:2px solid var(--gold2)}
 .modal-title{font-family:'Cinzel',serif;font-size:16px;color:var(--crimson);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center}
 .modal-close{background:none;border:none;cursor:pointer;font-size:22px;color:var(--ink3);padding:0 4px}
+.onb-slide{display:none;flex-direction:column;align-items:center;text-align:center;max-width:380px;margin:0 auto;animation:onbFade .35s ease}
+.onb-slide.active{display:flex}
+@keyframes onbFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.onb-icon{font-size:52px;line-height:1;margin-bottom:22px}
+.onb-title{font-family:'Cinzel',serif;font-size:21px;color:var(--crimson);margin-bottom:12px}
+.onb-text{font-family:'Inter',sans-serif;font-size:14px;color:var(--ink2);line-height:1.6}
+.onb-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);transition:all .2s}
+.onb-dot.active{background:var(--crimson);width:20px;border-radius:4px}
 .sep{height:0.5px;background:var(--border2);margin:.75rem 0}
 .flex-row{display:flex;gap:8px;flex-wrap:wrap}
 .flex-row .btn{flex:1;min-width:100px;justify-content:center}
@@ -625,6 +633,11 @@ input[type="file"]{display:none}
       <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="savePassword()">Cambiar contrasena</button>
     </div>
     <div class="card">
+      <div class="card-title"><span>&#128161;</span> Guia de la app</div>
+      <p style="font-size:12px;color:var(--ink3);margin-bottom:10px">Volve a ver la presentacion inicial con la explicacion de cada seccion.</p>
+      <button class="btn" style="width:100%;justify-content:center" onclick="openOnboardingManually()">Ver guia de la app</button>
+    </div>
+    <div class="card">
       <div class="card-title"><span>&#128276;</span> Notificaciones</div>
       <div id="notif-status" style="font-size:13px;color:var(--ink3);margin-bottom:10px"></div>
       <div id="notif-ios-note" style="display:none;font-size:12px;color:var(--ink3);padding:8px;background:var(--gold-tint);border-radius:8px;margin-bottom:10px">
@@ -763,6 +776,22 @@ input[type="file"]{display:none}
     <div class="flex-row" style="margin-top:8px"><button class="btn" onclick="closeModal('modal-new-trip')">Cancelar</button><button class="btn btn-primary" onclick="confirmNewTripModal()">Guardar</button></div>
   </div>
 </div>
+
+<!-- ONBOARDING: presentacion inicial de la app -->
+<div id="onboarding-overlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:600;flex-direction:column">
+  <div style="display:flex;justify-content:flex-end;padding:14px 16px 0">
+    <button onclick="skipOnboarding()" style="background:none;border:none;color:var(--ink3);font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;padding:8px">Saltar</button>
+  </div>
+  <div id="onboarding-slides" style="flex:1;display:flex;align-items:center;justify-content:center;padding:0 28px;overflow:hidden">
+    <!-- las tarjetas se inyectan por JS -->
+  </div>
+  <div style="display:flex;justify-content:center;gap:7px;padding:10px 0" id="onboarding-dots"></div>
+  <div style="display:flex;gap:10px;padding:16px 24px calc(24px + env(safe-area-inset-bottom))">
+    <button class="btn" id="onboarding-back" onclick="onboardingPrev()" style="flex:1;justify-content:center">Atras</button>
+    <button class="btn btn-primary" id="onboarding-next" onclick="onboardingNext()" style="flex:2;justify-content:center">Siguiente</button>
+  </div>
+</div>
+
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -980,6 +1009,7 @@ function showApp(){
   fetchEuro(false);
   loadNotifSchedules();scheduleAllNotifs();
   document.querySelectorAll('.modal-bg').forEach(function(mb){mb.addEventListener('click',function(e){if(e.target===mb)mb.classList.remove('open');});});
+  maybeShowOnboarding();
 }
 function toggleDrawer(){document.getElementById('nav-drawer').classList.toggle('open');}
 function closeDrawer(){document.getElementById('nav-drawer').classList.remove('open');}
@@ -1846,6 +1876,73 @@ function openModal(id){
   if(id==='modal-crono-full')openCronoFull();
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// ===== ONBOARDING: presentacion inicial de la app =====
+var ONB_SLIDES=[
+  {icon:'&#10011;',title:'Bienvenido a Itineritas',text:'Tu companera de viaje para la peregrinacion. Te mostramos en breve para que sirve cada seccion, asi le sacas el maximo provecho desde el primer dia.'},
+  {icon:'&#127968;',title:'Inicio',text:'De un vistazo: el dia del viaje en que estas, lo que toca hacer hoy segun el cronograma, las intenciones del dia y un resumen de tus gastos.'},
+  {icon:'&#128218;',title:'Bitacora',text:'Escribi la cronica de cada dia con tus fotos y reflexiones. La app puede armarte automaticamente un resumen corto para compartir por WhatsApp.'},
+  {icon:'&#9992;',title:'Transporte',text:'Cargá tus vuelos (hasta podes subir el PDF del pasaje y se completan solos) y los traslados terrestres. Todo se refleja en tu cronograma automaticamente.'},
+  {icon:'&#128176;',title:'Finanzas',text:'Segui el tipo de cambio actualizado, registra tus gastos por categoria y mira en que se te va la plata con graficos simples.'},
+  {icon:'&#128591;',title:'Intenciones y Traductor',text:'Guarda las intenciones de oracion del grupo, y usa el traductor con dictado por voz para el dia a dia en espanol, italiano, ingles o frances.'},
+  {icon:'&#9776;',title:'Un viaje, o varios',text:'Tocando "Itineritas" arriba de todo podes crear nuevos viajes o cambiar entre los que ya tenes, sin perder informacion de ninguno.'}
+];
+var onbIndex=0;
+
+function renderOnboardingSlides(){
+  var wrap=document.getElementById('onboarding-slides');
+  var dots=document.getElementById('onboarding-dots');
+  if(!wrap||!dots)return;
+  wrap.innerHTML=ONB_SLIDES.map(function(s,i){
+    return '<div class="onb-slide'+(i===0?' active':'')+'" data-idx="'+i+'">'+
+      '<div class="onb-icon">'+s.icon+'</div>'+
+      '<div class="onb-title">'+s.title+'</div>'+
+      '<div class="onb-text">'+s.text+'</div>'+
+    '</div>';
+  }).join('');
+  dots.innerHTML=ONB_SLIDES.map(function(s,i){return '<div class="onb-dot'+(i===0?' active':'')+'" data-idx="'+i+'"></div>';}).join('');
+}
+
+function updateOnboardingUI(){
+  document.querySelectorAll('.onb-slide').forEach(function(el){el.classList.toggle('active',+el.dataset.idx===onbIndex);});
+  document.querySelectorAll('.onb-dot').forEach(function(el){el.classList.toggle('active',+el.dataset.idx===onbIndex);});
+  var back=document.getElementById('onboarding-back');
+  var next=document.getElementById('onboarding-next');
+  back.style.visibility=onbIndex===0?'hidden':'visible';
+  next.textContent=onbIndex===ONB_SLIDES.length-1?'Empezar':'Siguiente';
+}
+
+function onboardingNext(){
+  if(onbIndex<ONB_SLIDES.length-1){onbIndex++;updateOnboardingUI();}
+  else{finishOnboarding();}
+}
+function onboardingPrev(){
+  if(onbIndex>0){onbIndex--;updateOnboardingUI();}
+}
+function skipOnboarding(){finishOnboarding();}
+
+function finishOnboarding(){
+  document.getElementById('onboarding-overlay').style.display='none';
+  if(currentUser)lsSet('onboarding_seen_'+currentUser,true);
+}
+
+// Se llama despues de showApp(). Si este usuario nunca vio la presentacion, la muestra.
+function maybeShowOnboarding(){
+  if(!currentUser)return;
+  if(lsGet('onboarding_seen_'+currentUser))return;
+  onbIndex=0;
+  renderOnboardingSlides();
+  updateOnboardingUI();
+  document.getElementById('onboarding-overlay').style.display='flex';
+}
+
+// Permite volver a verla manualmente desde Perfil.
+function openOnboardingManually(){
+  onbIndex=0;
+  renderOnboardingSlides();
+  updateOnboardingUI();
+  document.getElementById('onboarding-overlay').style.display='flex';
+}
 
 // ===== SELECTOR DE VIAJES (desplegable en "Itineritas") =====
 function updateTripSwitcherLabel(){
