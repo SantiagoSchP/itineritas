@@ -336,7 +336,15 @@ input[type="file"]{display:none}
       &#9888; Sin conexion &mdash; Los datos se guardaran cuando vuelva la red
     </div>
     <div class="nav-top">
-      <span class="nav-brand" style="cursor:pointer" onclick="showSection('home')">Itineritas</span>
+      <div class="trip-switcher" id="trip-switcher" style="position:relative">
+        <span class="nav-brand" id="trip-switcher-label" style="cursor:pointer;display:flex;align-items:center;gap:4px;flex-direction:column;align-items:flex-start;line-height:1.15" onclick="toggleTripMenu()"><span style="display:flex;align-items:center;gap:4px">Itineritas <span style="font-size:10px">&#9662;</span></span><span id="trip-switcher-subname" style="font-family:'Inter',sans-serif;font-size:9px;font-weight:400;letter-spacing:0;color:rgba(253,246,233,.65);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span></span>
+        <div id="trip-menu" style="display:none;position:absolute;top:100%;left:0;margin-top:8px;background:var(--parchment);border:2px solid var(--gold2);border-radius:8px;min-width:220px;max-width:280px;z-index:300;box-shadow:0 6px 20px rgba(0,0,0,.35)">
+          <div id="trip-menu-list" style="max-height:260px;overflow-y:auto"></div>
+          <div style="border-top:1px solid var(--gold2);padding:6px">
+            <button class="btn btn-sm" style="width:100%" onclick="openNewTripModal()">+ Nuevo viaje</button>
+          </div>
+        </div>
+      </div>
       <div id="theme-toggle-wrap" onclick="toggleThemeQuick()" title="Cambiar tema claro/oscuro" style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 8px;min-height:44px">
         <span style="font-size:13px;line-height:1">&#9728;&#65039;</span>
         <div id="theme-toggle-track" style="width:36px;height:20px;border-radius:10px;background:rgba(255,255,255,.25);position:relative;transition:background .2s;flex-shrink:0">
@@ -376,6 +384,7 @@ input[type="file"]{display:none}
   <!-- HOME -->
   <div class="section active main" id="section-home">
     <div class="home-header"><div class="home-crest">&#10011;</div><div class="home-title">Itineritas</div><div class="home-rule"></div></div>
+    <p id="home-trip-name" style="text-align:center;font-family:'Cinzel',serif;font-size:13px;color:var(--gold2);margin:-6px 0 4px;letter-spacing:.04em"></p>
     <p style="text-align:center;font-family:'IM Fell English',serif;font-size:12px;color:var(--ink3);margin-bottom:0;line-height:1.5">App ad peregrinationem tuam<br>La app para tu peregrinacion</p>
     <p class="home-date" id="home-date"></p>
     <div class="stat-row">
@@ -743,6 +752,19 @@ input[type="file"]{display:none}
   </div>
 </div>
 
+<!-- MODAL NUEVO VIAJE / RENOMBRAR VIAJE -->
+<div class="modal-bg" id="modal-new-trip">
+  <div class="modal">
+    <div class="modal-title" id="modal-new-trip-title">Nuevo viaje <button class="modal-close" onclick="closeModal('modal-new-trip')">X</button></div>
+    <label>Nombre del viaje</label>
+    <input type="text" id="new-trip-nombre" placeholder="Ej: Peregrinacion 2027" maxlength="60">
+    <input type="hidden" id="new-trip-mode" value="create">
+    <input type="hidden" id="new-trip-editing-id" value="">
+    <div class="flex-row" style="margin-top:8px"><button class="btn" onclick="closeModal('modal-new-trip')">Cancelar</button><button class="btn btn-primary" onclick="confirmNewTripModal()">Guardar</button></div>
+  </div>
+</div>
+
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="config.js"></script>
 <script>
@@ -750,12 +772,50 @@ var SB_URL='https://fobqoitnfuwvnmtsqesl.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvYnFvaXRuZnV3dm5tdHNxZXNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwOTQ3ODUsImV4cCI6MjA5NjY3MDc4NX0._lf6J50-4-lG26-qeHh1gC0SWtJM3aHdNoq7NsCmGbY';
 var GEMINI_KEY=(window.ITINERITAS_CONFIG&&window.ITINERITAS_CONFIG.GEMINI_KEY)||'';
 var currentUser=null,currentHash=null,currentName=null,appState=null;
+// tripsBox = la "caja" con todos los viajes del usuario: {activeTripId, trips:{id:{nombre,...datosDelViaje}}}
+// appState sigue siendo (como siempre) el objeto del viaje actualmente activo, asi que
+// todas las funciones existentes que leen/escriben appState.* siguen funcionando igual.
+var tripsBox=null;
 
 function sbH(){return{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};}
 function sbGet(email){return fetch(SB_URL+'/rest/v1/user_data?email=eq.'+encodeURIComponent(email)+'&select=*',{headers:sbH()}).then(function(r){return r.json();}).then(function(rows){return rows[0]||null;});}
 function sbUpsert(email,hash,name,data){return fetch(SB_URL+'/rest/v1/user_data',{method:'POST',headers:Object.assign({},sbH(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify({email:email,password_hash:hash,name:name,data:data,updated_at:new Date().toISOString()})}).then(function(r){if(!r.ok)throw new Error('sb '+r.status);});}
 
-function freshState(){return{currentDay:0,tripStart:new Date().toISOString().slice(0,10),tripEnd:'',days:{},vuelos:[],terrestres:[],gastos:[],intenciones:[],cronograma:[],euroRate:null,euroDate:null,euroSource:null};}
+function freshState(){return{currentDay:0,tripStart:new Date().toISOString().slice(0,10),tripEnd:'',days:{},vuelos:[],terrestres:[],gastos:[],intenciones:[],cronograma:[],euroRate:null,euroDate:null,euroSource:null,resumenDiario:null};}
+
+function uid(){return 't_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);}
+
+// Convierte lo que venga guardado en Supabase (formato viejo de un solo viaje,
+// o formato nuevo de varios viajes) en una "caja" de viajes valida.
+// Si es formato viejo, migra automaticamente ese viaje como el primero, sin
+// preguntar nada ni perder informacion.
+function normalizeTripsBox(raw){
+  if(raw&&raw.trips&&typeof raw.trips==='object'&&Object.keys(raw.trips).length>0){
+    // Ya es formato nuevo. Nos aseguramos de que activeTripId apunte a algo que existe.
+    if(!raw.activeTripId||!raw.trips[raw.activeTripId]){
+      raw.activeTripId=Object.keys(raw.trips)[0];
+    }
+    return raw;
+  }
+  // Formato viejo (o vacio/nuevo usuario): migrar a un primer viaje.
+  var id=uid();
+  var migrado=Object.assign(freshState(),raw||{});
+  var box={activeTripId:id,trips:{}};
+  box.trips[id]={nombre:'Mi primer viaje'};
+  Object.assign(box.trips[id],migrado);
+  return box;
+}
+
+function getActiveTrip(box){return box.trips[box.activeTripId];}
+
+// Reconstruye el objeto que se manda a Supabase: misma caja, pero con
+// appState (el viaje activo, que es lo que la app edita en vivo) volcado
+// de nuevo dentro de trips[activeTripId] antes de guardar.
+function packTripsBoxForSave(){
+  if(!tripsBox||!appState)return tripsBox;
+  tripsBox.trips[tripsBox.activeTripId]=appState;
+  return tripsBox;
+}
 function lsSet(k,v){try{localStorage.setItem('rc_'+k,JSON.stringify(v));}catch(e){}}
 function lsGet(k){try{var v=localStorage.getItem('rc_'+k);return v!==null?JSON.parse(v):null;}catch(e){return null;}}
 
@@ -830,7 +890,8 @@ function doLogin(){
     if(!u){showErr('login-error','No existe cuenta con ese correo.');return;}
     if(u.password_hash!==hashPass(pass)){showErr('login-error','Contrasena incorrecta.');return;}
     currentUser=email;currentHash=u.password_hash;currentName=u.name;
-    appState=Object.assign(freshState(),u.data||{});
+    tripsBox=normalizeTripsBox(u.data);
+    appState=getActiveTrip(tripsBox);
     if(document.getElementById('login-remember').checked)lsSet('session',{user:email});
     hideLoading();showApp();
   }).catch(function(){showErr('login-error','Error de conexion.');})
@@ -850,11 +911,14 @@ function doRegister(){
   var btn=document.getElementById('btn-register');btn.disabled=true;btn.textContent='Creando...';
   showLoading('Creando cuenta...');
   var h=hashPass(pass);var initState=freshState();
+  var firstId=uid();
+  var initBox={activeTripId:firstId,trips:{}};
+  initBox.trips[firstId]=Object.assign({nombre:'Mi primer viaje'},initState);
   sbGet(email).then(function(ex){
     if(ex){showErr('reg-error','Ya existe una cuenta con ese correo.');throw new Error('exists');}
-    return sbUpsert(email,h,name,initState);
+    return sbUpsert(email,h,name,initBox);
   }).then(function(){
-    currentUser=email;currentHash=h;currentName=name;appState=initState;
+    currentUser=email;currentHash=h;currentName=name;tripsBox=initBox;appState=getActiveTrip(tripsBox);
     if(document.getElementById('reg-remember').checked)lsSet('session',{user:email});
     var ok=document.getElementById('reg-success');ok.textContent='Cuenta creada!';ok.style.display='block';
     setTimeout(function(){hideLoading();showApp();},800);
@@ -862,17 +926,18 @@ function doRegister(){
   .then(function(){btn.disabled=false;btn.textContent='Crear cuenta';});
 }
 
-function doLogout(){lsDel('session');currentUser=null;currentHash=null;currentName=null;appState=null;document.getElementById('app').style.display='none';document.getElementById('auth-screen').style.display='flex';document.getElementById('login-pass').value='';hideErr('login-error');closeDrawer();}
+function doLogout(){lsDel('session');currentUser=null;currentHash=null;currentName=null;appState=null;tripsBox=null;document.getElementById('app').style.display='none';document.getElementById('auth-screen').style.display='flex';document.getElementById('login-pass').value='';hideErr('login-error');closeDrawer();}
 
 var saveTimer=null;
 function saveState(){
-  if(!currentUser||!appState)return;
-  lsSet('cache_'+currentUser,appState);
+  if(!currentUser||!appState||!tripsBox)return;
+  var box=packTripsBoxForSave();
+  lsSet('cache_'+currentUser,box);
   if(!isOnline){pendingSync=true;setSyncStatus('Sin conexion - pendiente');return;}
   clearTimeout(saveTimer);
   saveTimer=setTimeout(function(){
     setSyncStatus('Guardando...');
-    sbUpsert(currentUser,currentHash,currentName,appState)
+    sbUpsert(currentUser,currentHash,currentName,box)
       .then(function(){
         pendingSync=false;
         setSyncStatus('Sincronizado');
@@ -894,11 +959,11 @@ function boot(){
   if(sess&&sess.user){
     showLoading('Cargando tu cuenta...');
     sbGet(sess.user).then(function(u){
-      if(u){currentUser=sess.user;currentHash=u.password_hash;currentName=u.name;appState=Object.assign(freshState(),u.data||{});hideLoading();showApp();}
+      if(u){currentUser=sess.user;currentHash=u.password_hash;currentName=u.name;tripsBox=normalizeTripsBox(u.data);appState=getActiveTrip(tripsBox);hideLoading();showApp();}
       else{lsDel('session');hideLoading();document.getElementById('auth-screen').style.display='flex';}
     }).catch(function(){
       var cache=lsGet('cache_'+sess.user);
-      if(cache){currentUser=sess.user;currentName='';currentHash='';appState=Object.assign(freshState(),cache);hideLoading();showApp();showToast('Sin internet - datos locales');}
+      if(cache){currentUser=sess.user;currentName='';currentHash='';tripsBox=normalizeTripsBox(cache);appState=getActiveTrip(tripsBox);hideLoading();showApp();showToast('Sin internet - datos locales');}
       else{hideLoading();document.getElementById('auth-screen').style.display='flex';}
     });
   }else{hideLoading();document.getElementById('auth-screen').style.display='flex';}
@@ -909,6 +974,7 @@ function hideLoading(){document.getElementById('loading-overlay').classList.remo
 function showApp(){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='flex';
+  updateTripSwitcherLabel();
   showSection('home');
   renderVuelos();renderTerrestres();renderGastos();renderIntenciones();
   fetchEuro(false);
@@ -1005,6 +1071,8 @@ function renderTripStatus(now){
 
 function renderHome(){
   var now=new Date();
+  var tnEl=document.getElementById('home-trip-name');
+  if(tnEl)tnEl.textContent=(appState&&appState.nombre)?appState.nombre:'';
   document.getElementById('home-date').textContent=now.toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   if(appState.tripStart){var s=new Date(appState.tripStart+'T00:00:00');var d=Math.floor((now-s)/86400000)+1;document.getElementById('home-day').textContent=d>=1?'Dia '+d:'-';}
   renderTripStatus(now);
@@ -1744,6 +1812,143 @@ function openModal(id){
   if(id==='modal-crono-full')openCronoFull();
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// ===== SELECTOR DE VIAJES (desplegable en "Itineritas") =====
+function updateTripSwitcherLabel(){
+  var el=document.getElementById('trip-switcher-subname');
+  if(el)el.textContent=(appState&&appState.nombre)?appState.nombre:'';
+}
+
+function renderTripMenu(){
+  updateTripSwitcherLabel();
+  var list=document.getElementById('trip-menu-list');
+  if(!list||!tripsBox)return;
+  list.innerHTML='';
+  var ids=Object.keys(tripsBox.trips);
+  ids.forEach(function(id){
+    var t=tripsBox.trips[id];
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:9px 12px;gap:6px;border-bottom:1px solid var(--gold2);cursor:pointer'+(id===tripsBox.activeTripId?';background:rgba(139,26,26,.08)':'');
+    var nameSpan=document.createElement('span');
+    nameSpan.textContent=(id===tripsBox.activeTripId?'\u2713 ':'')+(t.nombre||'Viaje sin nombre');
+    nameSpan.style.cssText='font-family:"IM Fell English",serif;font-size:14px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    nameSpan.onclick=function(){selectTrip(id);};
+    row.appendChild(nameSpan);
+    var actions=document.createElement('div');
+    actions.style.cssText='display:flex;gap:4px;flex-shrink:0';
+    var editBtn=document.createElement('button');
+    editBtn.textContent='\u270e';
+    editBtn.title='Renombrar';
+    editBtn.style.cssText='background:none;border:none;cursor:pointer;font-size:13px;padding:4px';
+    editBtn.onclick=function(e){e.stopPropagation();openRenameTripModal(id);};
+    actions.appendChild(editBtn);
+    if(ids.length>1){
+      var delBtn=document.createElement('button');
+      delBtn.textContent='\u2716';
+      delBtn.title='Eliminar';
+      delBtn.style.cssText='background:none;border:none;cursor:pointer;font-size:12px;padding:4px;color:#8b1a1a';
+      delBtn.onclick=function(e){e.stopPropagation();deleteTrip(id);};
+      actions.appendChild(delBtn);
+    }
+    row.appendChild(actions);
+    list.appendChild(row);
+  });
+}
+
+function toggleTripMenu(){
+  var m=document.getElementById('trip-menu');
+  if(!m)return;
+  var abrir=m.style.display==='none'||!m.style.display;
+  if(abrir){renderTripMenu();m.style.display='block';}
+  else{m.style.display='none';}
+}
+
+// Cerrar el menu de viajes si se toca afuera
+document.addEventListener('click',function(e){
+  var sw=document.getElementById('trip-switcher');
+  var m=document.getElementById('trip-menu');
+  if(sw&&m&&m.style.display==='block'&&!sw.contains(e.target)){m.style.display='none';}
+});
+
+function selectTrip(id){
+  if(!tripsBox||id===tripsBox.activeTripId){var m=document.getElementById('trip-menu');if(m)m.style.display='none';return;}
+  // Guardar el viaje que se esta dejando antes de cambiar
+  packTripsBoxForSave();
+  tripsBox.activeTripId=id;
+  appState=getActiveTrip(tripsBox);
+  saveState();
+  var m=document.getElementById('trip-menu');if(m)m.style.display='none';
+  updateTripSwitcherLabel();
+  showSection('home');
+  renderVuelos();renderTerrestres();renderGastos();renderIntenciones();
+  loadNotifSchedules();scheduleAllNotifs();
+  showToast('Viaje activo: '+(appState.nombre||''));
+}
+
+function openNewTripModal(){
+  document.getElementById('modal-new-trip-title').innerHTML='Nuevo viaje <button class="modal-close" onclick="closeModal(\'modal-new-trip\')">X</button>';
+  document.getElementById('new-trip-nombre').value='';
+  document.getElementById('new-trip-mode').value='create';
+  document.getElementById('new-trip-editing-id').value='';
+  var menu=document.getElementById('trip-menu');if(menu)menu.style.display='none';
+  openModal('modal-new-trip');
+}
+
+function openRenameTripModal(id){
+  document.getElementById('modal-new-trip-title').innerHTML='Renombrar viaje <button class="modal-close" onclick="closeModal(\'modal-new-trip\')">X</button>';
+  document.getElementById('new-trip-nombre').value=tripsBox.trips[id].nombre||'';
+  document.getElementById('new-trip-mode').value='rename';
+  document.getElementById('new-trip-editing-id').value=id;
+  openModal('modal-new-trip');
+}
+
+function confirmNewTripModal(){
+  var nombre=document.getElementById('new-trip-nombre').value.trim();
+  if(!nombre){showToast('Poné un nombre para el viaje');return;}
+  var mode=document.getElementById('new-trip-mode').value;
+  if(mode==='rename'){
+    var id=document.getElementById('new-trip-editing-id').value;
+    tripsBox.trips[id].nombre=nombre;
+    if(id===tripsBox.activeTripId)appState.nombre=nombre;
+    saveState();
+    updateTripSwitcherLabel();
+    closeModal('modal-new-trip');
+    showToast('Viaje renombrado');
+    return;
+  }
+  // Crear viaje nuevo: se guarda el activo actual y se cambia al nuevo, vacio.
+  packTripsBoxForSave();
+  var newId=uid();
+  tripsBox.trips[newId]=Object.assign({nombre:nombre},freshState());
+  tripsBox.activeTripId=newId;
+  appState=getActiveTrip(tripsBox);
+  saveState();
+  updateTripSwitcherLabel();
+  closeModal('modal-new-trip');
+  showSection('home');
+  renderVuelos();renderTerrestres();renderGastos();renderIntenciones();
+  loadNotifSchedules();scheduleAllNotifs();
+  showToast('Viaje creado: '+nombre);
+}
+
+function deleteTrip(id){
+  if(!tripsBox||Object.keys(tripsBox.trips).length<=1)return;
+  var nombre=tripsBox.trips[id].nombre||'este viaje';
+  if(!confirm('Esto va a borrar el viaje "'+nombre+'" junto con TODOS sus datos (bitacora, vuelos, gastos, etc). Esta accion no se puede deshacer. Continuar?'))return;
+  delete tripsBox.trips[id];
+  if(tripsBox.activeTripId===id){
+    tripsBox.activeTripId=Object.keys(tripsBox.trips)[0];
+    appState=getActiveTrip(tripsBox);
+    updateTripSwitcherLabel();
+    showSection('home');
+    renderVuelos();renderTerrestres();renderGastos();renderIntenciones();
+    loadNotifSchedules();scheduleAllNotifs();
+  }
+  saveState();
+  renderTripMenu();
+  showToast('Viaje eliminado');
+}
+
 function removeItem(arr,idx){
   if(arr==='vuelos'){
     var v=appState.vuelos[idx];
