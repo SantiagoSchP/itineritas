@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#8b1a1a">
 <link rel="apple-touch-icon" href="./icon-192.png">
@@ -100,7 +100,7 @@ body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink)
 .auth-tab{flex:1;padding:9px;background:var(--card-bg);border:none;font-size:12px;font-family:'Cinzel',serif;cursor:pointer;color:var(--ink3);transition:all .15s;letter-spacing:.05em}
 .auth-tab.active{background:var(--crimson);color:#fdf6e9}
 .field-label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);font-weight:500;margin-bottom:5px;display:block}
-.auth-input{width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:14px;font-family:'Inter',sans-serif;background:var(--input-bg);color:var(--ink);margin-bottom:12px}
+.auth-input{width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:16px;font-family:'Inter',sans-serif;background:var(--input-bg);color:var(--ink);margin-bottom:12px}
 .auth-input:focus{outline:none;border-color:var(--gold);background:var(--input-bg-focus)}
 .remember-row{display:flex;align-items:center;gap:8px;margin-bottom:14px}
 .remember-row input[type=checkbox]{width:auto;margin-bottom:0;cursor:pointer;accent-color:var(--crimson)}
@@ -168,7 +168,7 @@ body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink)
 .section{display:none}.section.active{display:block}
 .card{background:var(--card-bg);border-radius:var(--radius);border:0.5px solid var(--border2);padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
 .card-title{font-family:'Cinzel',serif;font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;display:flex;align-items:center;gap:7px}
-input,textarea,select{width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:8px 12px;font-size:14px;font-family:'Inter',sans-serif;background:var(--input-bg);color:var(--ink);margin-bottom:8px}
+input,textarea,select{width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:8px 12px;font-size:16px;font-family:'Inter',sans-serif;background:var(--input-bg);color:var(--ink);margin-bottom:8px}
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);background:var(--input-bg-focus)}
 textarea{resize:vertical;min-height:80px}
 label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);display:block;margin-bottom:3px;margin-top:6px}
@@ -248,7 +248,7 @@ label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--i
 .lang-panel{border:0.5px solid var(--border2);border-radius:10px;overflow:hidden;margin-bottom:10px;background:var(--card-bg)}
 .lang-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--gold-tint);border-bottom:0.5px solid var(--border2)}
 .lang-label{font-family:'Cinzel',serif;font-size:12px;color:var(--ink2);display:flex;align-items:center;gap:6px}
-.lang-textarea{border:none;border-radius:0;background:var(--card-bg);margin-bottom:0;font-size:14px;min-height:70px;padding:10px 12px}
+.lang-textarea{border:none;border-radius:0;background:var(--card-bg);margin-bottom:0;font-size:16px;min-height:70px;padding:10px 12px}
 .lang-textarea:focus{border:none;outline:none}
 select option{background:var(--input-bg);color:var(--ink)}
 .translate-loading{display:none;color:var(--ink3);font-size:12px;font-style:italic;padding:6px 12px}
@@ -335,7 +335,7 @@ input[type="file"]{display:none}
     <div id="offline-banner" style="display:none;background:#7a4a00;color:#fdf6e9;text-align:center;font-size:12px;padding:5px 1rem;font-family:'Inter',sans-serif">
       &#9888; Sin conexion &mdash; Los datos se guardaran cuando vuelva la red
     </div>
-    <div class="nav-top">
+    <div class="nav-top" style="position:relative">
       <div class="trip-switcher" id="trip-switcher" style="position:relative">
         <span class="nav-brand" id="trip-switcher-label" style="cursor:pointer;display:flex;align-items:center;gap:4px;flex-direction:column;align-items:flex-start;line-height:1.15" onclick="toggleTripMenu()"><span style="display:flex;align-items:center;gap:4px">Itineritas <span style="font-size:10px">&#9662;</span></span><span id="trip-switcher-subname" style="font-family:'Inter',sans-serif;font-size:9px;font-weight:400;letter-spacing:0;color:rgba(253,246,233,.65);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span></span>
         <div id="trip-menu" style="display:none;position:absolute;top:100%;left:0;margin-top:8px;background:var(--parchment);border:2px solid var(--gold2);border-radius:8px;min-width:220px;max-width:280px;z-index:300;box-shadow:0 6px 20px rgba(0,0,0,.35)">
@@ -345,7 +345,7 @@ input[type="file"]{display:none}
           </div>
         </div>
       </div>
-      <div id="theme-toggle-wrap" onclick="toggleThemeQuick()" title="Cambiar tema claro/oscuro" style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 8px;min-height:44px">
+      <div id="theme-toggle-wrap" onclick="toggleThemeQuick()" title="Cambiar tema claro/oscuro" style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 8px;min-height:44px;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)">
         <span style="font-size:13px;line-height:1">&#9728;&#65039;</span>
         <div id="theme-toggle-track" style="width:36px;height:20px;border-radius:10px;background:rgba(255,255,255,.25);position:relative;transition:background .2s;flex-shrink:0">
           <div id="theme-toggle-thumb" style="width:16px;height:16px;border-radius:50%;background:#fdf6e9;position:absolute;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.3)"></div>
@@ -1326,21 +1326,37 @@ function processPDF(file){
 function extractFlightsWithGemini(text){
   document.getElementById('vuelo-pdf-msg').textContent='Analizando vuelos...';
   var prompt=
-    'Sos un experto en interpretar pasajes aereos. Del siguiente texto extraido de un PDF de pasaje, extraé TODOS los segmentos de vuelo (cada tramo es un vuelo separado).\n\n'+
-    'REGLAS CRITICAS que debes seguir con maxima precision:\n'+
-    '1. "ruta": SIEMPRE debe ser "Ciudad de salida - Ciudad de llegada" en ese ORDEN. La ciudad de salida es donde el avion DESPEGA, la de llegada donde ATERRIZA. Nunca los inviertas.\n'+
-    '2. "aerolinea": nombre de la aerolinea + codigo IATA + numero de vuelo. Ej: "Iberia IB1234", "Aerolíneas Argentinas AR1234". Si solo ves el codigo, usalo igual.\n'+
-    '3. "fecha": formato YYYY-MM-DD. Es la fecha LOCAL de SALIDA del vuelo.\n'+
-    '4. "salida": formato YYYY-MM-DDTHH:MM. Fecha y hora LOCAL de salida. Si el texto dice "14:30" y la fecha es 2025-07-10, el resultado es "2025-07-10T14:30".\n'+
-    '5. "llegada": formato YYYY-MM-DDTHH:MM. Atencion: si la llegada es al dia siguiente, cambia la fecha. Si sale el 10 a las 23:00 y llega 8 horas despues, llega el 11.\n'+
-    '6. "terminal": codigo IATA del aeropuerto de salida (3 letras, ej: "EZE", "MAD", "FCO") si aparece en el texto. Si no, cadena vacia.\n'+
-    '7. "notas": numero de reserva o PNR si aparece (suele ser 6 caracteres alfanumericos). Sino, cadena vacia.\n'+
-    '8. NO inventes vuelos que no esten explicitamente en el texto. Si hay duda, no lo incluyas.\n'+
-    '9. NO repitas el mismo vuelo dos veces aunque aparezca mencionado mas de una vez en el PDF.\n\n'+
-    'Respondé UNICAMENTE con un array JSON valido, empezando con [ y terminando con ], sin texto adicional, sin markdown.\n\n'+
-    'Ejemplo de respuesta correcta:\n'+
-    '[{"ruta":"Buenos Aires - Madrid","aerolinea":"Iberia IB6841","fecha":"2025-07-10","salida":"2025-07-10T13:45","llegada":"2025-07-11T05:30","terminal":"EZE","notas":"ABC123"}]\n\n'+
-    'TEXTO DEL PASAJE (leelo completo antes de responder):\n---\n'+text.slice(0,9000)+'\n---';
+    'Sos un experto en interpretar itinerarios aereos (pasajes emitidos por agencias de viaje, formato tipo "CheckMyTrip"/Amadeus, o e-tickets de aerolineas). '+
+    'Del texto extraido de un PDF, identifica TODOS los segmentos de vuelo (cada tramo con su propio numero de vuelo es un vuelo separado, incluso si son escalas del mismo viaje).\n\n'+
+
+    'COMO ESTA ORGANIZADO EL TEXTO (leelo con atencion, el orden de las lineas puede venir mezclado porque se extrajo de un PDF):\n'+
+    '- Cada segmento suele empezar con una fecha en formato dia-de-semana + dia + mes + anio, ej: "Tuesday 30 June 2026". Esa fecha es del DIA DE SALIDA de ESE segmento especifico.\n'+
+    '- Debajo aparece la aerolinea operadora y el numero de vuelo, ej: "Air Europa UX 042" o "Air Europa UX 1042 (Operated by Air Europa Express)". El codigo de vuelo real es el que sigue al nombre (UX 042 = UX042), ignora cual aerolinea "opera" si es distinta de la que vendio el ticket, pero igual incluila en el nombre si aparece.\n'+
+    '- Luego "Departure" con hora + ciudad de origen, y "Arrival" con hora + ciudad de destino. Formato tipico: "Departure 30 June 12:10 Buenos Aires, (Ministro Pistarini)". Ahi "30 June" es el dia de salida (puede repetir o no el anio, asumi el mismo anio que la fecha del encabezado de ese segmento) y "12:10" es la hora.\n'+
+    '- El nombre de la ciudad viene ANTES de la coma y el parentesis: en "Madrid, (Adolfo Suarez Barajas) (+) Terminal: 1 - T1", la ciudad es "Madrid", lo que esta entre parentesis es el nombre del AEROPUERTO (no lo confundas con terminal), y "(+)" es solo un simbolo decorativo sin significado, ignoralo.\n'+
+    '- La palabra "Terminal:" seguida de texto (ej: "Terminal: 1 - T1" o "Terminal: P - Departures Terminal") es la terminal del aeropuerto, NO es un codigo IATA de 3 letras. Si no aparece esta palabra explicitamente, terminal queda vacio.\n'+
+    '- "Arrival" puede tener una fecha distinta a "Departure" si el vuelo cruza la medianoche (overnight) — fijate si el dia de la semana o la fecha indicada junto a Arrival es distinta a la de Departure.\n\n'+
+
+    'REGLAS CRITICAS para cada campo del resultado:\n'+
+    '1. "ruta": SIEMPRE "Ciudad de origen - Ciudad de destino" en ese ORDEN exacto (origen = donde despega = junto a "Departure"; destino = donde aterriza = junto a "Arrival"). Usa el nombre de la ciudad, no el del aeropuerto ni su codigo. Ej: "Buenos Aires - Madrid", nunca al reves.\n'+
+    '2. "aerolinea": nombre de la aerolinea + numero de vuelo pegado al codigo IATA de 2 letras, ej: "Air Europa UX042". Si el texto separa el codigo y el numero con espacio (ej "UX 042"), unilos sin espacio en el resultado.\n'+
+    '3. "fecha": formato YYYY-MM-DD, la fecha LOCAL de SALIDA de ese segmento especifico (no la fecha de emision del documento, que suele aparecer al principio del PDF como "Document Issue Date" y NO es un vuelo).\n'+
+    '4. "salida": formato YYYY-MM-DDTHH:MM, fecha y hora local exacta de "Departure" de ese segmento.\n'+
+    '5. "llegada": formato YYYY-MM-DDTHH:MM. Si "Arrival" muestra una fecha/dia distinto al de "Departure" (overnight), usa esa fecha distinta. Si no se menciona fecha de llegada explicita, calculala sumando la duracion del vuelo si esta indicada (ej "Duration 12:00"), o si no hay duracion, asumi mismo dia que la salida.\n'+
+    '6. "terminal": el texto que sigue literalmente a la palabra "Terminal:" en la seccion de Departure de ese segmento (ej "P - Departures Terminal" o "1 - T1"). Si no aparece la palabra "Terminal:", dejalo vacio. NUNCA pongas ahi un codigo de aeropuerto de 3 letras.\n'+
+    '7. "notas": codigo de reserva / booking reference / PNR (normalmente 6 caracteres alfanumericos en mayuscula, suele decir "Booking ref:" o "Airline Booking Reference"). Si hay numero de e-ticket, podes agregarlo tambien separado por coma. Si no hay nada, cadena vacia.\n'+
+    '8. Un viaje de ida y vuelta con escalas tiene VARIOS segmentos: extraelos TODOS como vuelos independientes, en el orden cronologico en que aparecen en el texto, cada uno con su propia fecha/hora/ruta.\n'+
+    '9. NO inventes vuelos que no esten explicitamente en el texto. Si un dato puntual no aparece, dejalo vacio en vez de adivinarlo.\n'+
+    '10. NO repitas el mismo segmento de vuelo dos veces aunque el texto lo mencione mas de una vez (por ejemplo en una seccion de resumen y otra vez con el detalle de "Check-in").\n\n'+
+
+    'Respondé UNICAMENTE con un array JSON valido, empezando con [ y terminando con ], sin texto adicional, sin markdown, sin explicaciones.\n\n'+
+    'Ejemplo de un caso con ida + vuelta con 1 escala (3 segmentos en total), basado en un itinerario real:\n'+
+    '[\n'+
+    '{"ruta":"Buenos Aires - Madrid","aerolinea":"Air Europa UX042","fecha":"2026-06-30","salida":"2026-06-30T12:10","llegada":"2026-07-01T05:10","terminal":"P - Departures Terminal","notas":"AJUPCL"},\n'+
+    '{"ruta":"Rome - Madrid","aerolinea":"Air Europa UX1042","fecha":"2026-07-28","salida":"2026-07-28T16:35","llegada":"2026-07-28T19:10","terminal":"1","notas":"AJUPCL"},\n'+
+    '{"ruta":"Madrid - Buenos Aires","aerolinea":"Air Europa UX041","fecha":"2026-07-28","salida":"2026-07-28T23:55","llegada":"2026-07-29T07:40","terminal":"1 - T1","notas":"AJUPCL"}\n'+
+    ']\n\n'+
+    'TEXTO DEL PASAJE (leelo completo, de principio a fin, antes de responder):\n---\n'+text.slice(0,12000)+'\n---';
   tryGemini(['gemini-1.5-flash','gemini-1.5-flash-8b'],prompt,function(resp){
     var arr=null;
     if(resp){
@@ -1399,12 +1415,18 @@ function extractFlightsLocally(text){
     if(seen[code])continue;
     seen[code]=true;
     var pos=m.index;
-    var ctx=text.slice(Math.max(0,pos-300),Math.min(text.length,pos+300));
+    var ctx=text.slice(Math.max(0,pos-300),Math.min(text.length,pos+400));
     var fecha=findDateInText(ctx);
     var times=findTimesInText(ctx);
-    var airports=findAirportCodesInText(ctx,code);
+    var cities=findCitiesNearDepartureArrival(ctx);
+    var ruta;
+    if(cities.length>=2)ruta=cities[0]+' - '+cities[1];
+    else{
+      var airports=findAirportCodesInText(ctx,code);
+      ruta=airports.length>=2?airports[0]+' - '+airports[1]:(airports.length===1?airports[0]+' - ':'Completar ruta');
+    }
     flights.push({
-      ruta:airports.length>=2?airports[0]+' - '+airports[1]:(airports.length===1?airports[0]+' - ':'Completar ruta'),
+      ruta:ruta,
       aerolinea:code,
       fecha:fecha||'',
       salida:fecha&&times[0]?fecha+'T'+times[0]:'',
@@ -1414,6 +1436,18 @@ function extractFlightsLocally(text){
     });
   }
   return flights;
+}
+// Busca el patron "Departure ... NombreCiudad," y "Arrival ... NombreCiudad,"
+// que es como aparece en pasajes tipo CheckMyTrip/Amadeus (ciudad seguida de
+// coma y el aeropuerto entre parentesis). Sirve de respaldo cuando no hay
+// codigos IATA de 3 letras sueltos en el texto.
+function findCitiesNearDepartureArrival(ctx){
+  var cities=[];
+  var depM=ctx.match(/Departure[^A-Za-z]*[\d:]*\s*[A-Za-z]*\s*\d*\s*([A-Z][a-zA-Z\u00C0-\u00FF\s]+?),\s*\(/);
+  if(depM)cities.push(depM[1].trim());
+  var arrM=ctx.match(/Arrival[^A-Za-z]*[\d:]*\s*[A-Za-z]*\s*\d*\s*([A-Z][a-zA-Z\u00C0-\u00FF\s]+?),\s*\(/);
+  if(arrM)cities.push(arrM[1].trim());
+  return cities;
 }
 function findDateInText(ctx){
   var m=ctx.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
