@@ -164,9 +164,10 @@ body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink)
   .nav-hamburger{min-width:44px;min-height:44px}
 }
 .section{display:none}.section.active{display:block}
-.card{background:var(--card-bg);border-radius:var(--radius);border:0.5px solid var(--border2);padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+.card{background:var(--card-bg);border-radius:var(--radius);border:0.5px solid var(--border2);padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow);overflow:hidden}
 .card-title{font-family:'Cinzel',serif;font-size:0.7333rem;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;display:flex;align-items:center;gap:7px}
-input,textarea,select{width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:0.55em 12px;font-size:1.0667rem;font-family:'Inter',sans-serif;background:var(--input-bg);color:var(--ink);margin-bottom:8px}
+input,textarea,select{width:100%;min-width:0;max-width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:0.55em 12px;font-size:1.0667rem;font-family:'Inter',sans-serif;background:var(--input-bg);color:var(--ink);margin-bottom:8px}
+input[type="date"],input[type="time"],input[type="datetime-local"]{min-width:0;max-width:100%;width:100%}
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);background:var(--input-bg-focus)}
 textarea{resize:vertical;min-height:80px}
 label{font-size:0.7333rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);display:block;margin-bottom:3px;margin-top:6px}
@@ -238,7 +239,7 @@ label{font-size:0.7333rem;text-transform:uppercase;letter-spacing:.08em;color:va
 .euro-box .euro-date{font-size:0.7333rem;color:var(--ink3);margin-top:4px;font-style:italic}
 .calc-row{display:flex;gap:8px;align-items:center;margin-top:8px}
 .calc-row input{margin-bottom:0}
-.calc-result{font-family:'Cinzel',serif;font-size:1.0667rem;color:var(--crimson);min-width:90px;text-align:right}
+.calc-result{font-family:'Cinzel',serif;font-size:1.0667rem;font-weight:700;color:var(--crimson);min-width:90px;text-align:right}
 .int-item{border:0.5px solid var(--border2);border-radius:10px;padding:12px;margin-bottom:8px;background:var(--card-bg)}
 .int-item .int-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .int-item .int-txt{font-family:'IM Fell English',serif;font-size:0.9333rem;line-height:1.6;color:var(--ink)}
@@ -470,7 +471,7 @@ input[type="file"]{display:none}
       </div>
       <div class="card">
         <div class="card-title"><span>&#128218;</span> Exportar bit&aacute;cora (Word)</div>
-        <p style="font-size:0.8667rem;color:var(--ink3);margin-bottom:10px;font-style:italic">Incluye textos e imagenes. Tipografia Times New Roman.</p>
+        <p style="font-size:0.8667rem;color:var(--ink3);margin-bottom:10px;font-style:italic">Incluye textos e im&aacute;genes.</p>
         <div class="flex-row">
           <button class="btn btn-sm btn-primary" onclick="exportBitacoraWord('cronicas')">Exportar Cr&oacute;nicas (.docx)</button>
           <button class="btn btn-sm btn-primary" onclick="exportBitacoraWord('cosechas')">Exportar Cosechas (.docx)</button>
@@ -578,12 +579,12 @@ input[type="file"]{display:none}
   <!-- TRADUCTOR -->
   <div class="section main" id="section-traductor">
     <div class="section-title"><span>&#127760;</span> Traductor</div>
-    <p style="font-size:0.8667rem;color:var(--ink3);margin-bottom:.75rem;font-style:italic">Escribi en un idioma y toca Traducir.</p>
+    <p style="font-size:0.8667rem;color:var(--ink3);margin-bottom:.75rem;font-style:italic">Escrib&iacute; en un idioma y toc&aacute; Traducir.</p>
     <div style="display:flex;gap:8px;margin-bottom:10px">
       <button class="btn btn-accent" style="flex:1;justify-content:center" id="btn-translate" onclick="doTranslateNow()">Traducir ahora</button>
       <button class="btn btn-sm" onclick="clearAllTrad()">Limpiar</button>
     </div>
-    <div class="lang-panel"><div class="lang-header"><div class="lang-label">Espanol</div><button class="btn btn-sm" id="btn-mic-es" onclick="toggleMicTrad('es')">Mic</button></div><div id="rec-es" class="recording-indicator" style="display:none;margin:4px 8px"><div class="rec-dot"></div>Grabando...</div><textarea class="lang-textarea" id="trad-es" placeholder="Escribi en espanol..."></textarea><div class="translate-loading" id="load-es">Traduciendo...</div></div>
+    <div class="lang-panel"><div class="lang-header"><div class="lang-label">Espa&ntilde;ol</div><button class="btn btn-sm" id="btn-mic-es" onclick="toggleMicTrad('es')">Mic</button></div><div id="rec-es" class="recording-indicator" style="display:none;margin:4px 8px"><div class="rec-dot"></div>Grabando...</div><textarea class="lang-textarea" id="trad-es" placeholder="Escrib&iacute; en espa&ntilde;ol..."></textarea><div class="translate-loading" id="load-es">Traduciendo...</div></div>
     <div class="lang-panel"><div class="lang-header"><div class="lang-label">English</div><button class="btn btn-sm" id="btn-mic-en" onclick="toggleMicTrad('en')">Mic</button></div><div id="rec-en" class="recording-indicator" style="display:none;margin:4px 8px"><div class="rec-dot"></div>Recording...</div><textarea class="lang-textarea" id="trad-en" placeholder="Write in English..."></textarea><div class="translate-loading" id="load-en">Translating...</div></div>
     <div class="lang-panel"><div class="lang-header"><div class="lang-label">Italiano</div><button class="btn btn-sm" id="btn-mic-it" onclick="toggleMicTrad('it')">Mic</button></div><div id="rec-it" class="recording-indicator" style="display:none;margin:4px 8px"><div class="rec-dot"></div>Registrazione...</div><textarea class="lang-textarea" id="trad-it" placeholder="Scrivi in italiano..."></textarea><div class="translate-loading" id="load-it">Traduzione...</div></div>
     <div class="lang-panel"><div class="lang-header"><div class="lang-label">Francais</div><button class="btn btn-sm" id="btn-mic-fr" onclick="toggleMicTrad('fr')">Mic</button></div><div id="rec-fr" class="recording-indicator" style="display:none;margin:4px 8px"><div class="rec-dot"></div>Enregistrement...</div><textarea class="lang-textarea" id="trad-fr" placeholder="Ecrivez en francais..."></textarea><div class="translate-loading" id="load-fr">Traduction...</div></div>
@@ -642,6 +643,7 @@ input[type="file"]{display:none}
     </div>
     <div class="card">
       <div class="card-title"><span>&#128276;</span> Notificaciones</div>
+      <p style="font-size:0.8rem;color:var(--ink3);margin-bottom:8px">Avisos del cronograma y recordatorios diarios. En iPhone no funcionan muy bien (Apple limita las notificaciones de las apps web): para que anden mejor, agreg&aacute; Itineritas a la pantalla de inicio.</p>
       <div id="notif-status" style="font-size:0.8667rem;color:var(--ink3);margin-bottom:10px"></div>
       <div id="notif-ios-note" style="display:none;font-size:0.8rem;color:var(--ink3);padding:8px;background:var(--gold-tint);border-radius:8px;margin-bottom:10px">
         &#128235; En iPhone: agrega Itineritas a la pantalla de inicio (Compartir &rarr; "Agregar a pantalla de inicio") para que las notificaciones funcionen aunque la app no este abierta.
@@ -674,7 +676,7 @@ input[type="file"]{display:none}
     </div>
     <div class="card">
       <div class="card-title"><span>&#128231;</span> Resumen diario por email</div>
-      <p style="font-size:0.8rem;color:var(--ink3);margin-bottom:10px">Recib&iacute; un correo todos los d&iacute;as con las actividades de tu cronograma. Funciona aunque no tengas la app abierta, incluso en iPhone.</p>
+      <p style="font-size:0.8rem;color:var(--ink3);margin-bottom:10px">Recib&iacute; un correo todos los d&iacute;as con las actividades de tu cronograma.</p>
       <div class="remember-row" style="margin-bottom:12px">
         <input type="checkbox" id="resumen-activado">
         <label for="resumen-activado">Activar resumen diario</label>
@@ -882,6 +884,7 @@ function actualizarIconoTema(modo){
 
 function aplicarTema(modo){
   document.body.classList.remove('theme-dark');
+  document.documentElement.classList.remove('theme-dark-pre');
   if(modo==='dark')document.body.classList.add('theme-dark');
 }
 
@@ -1906,10 +1909,10 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 var ONB_SLIDES=[
   {icon:'&#10011;',title:'Bienvenido a Itineritas',text:'Tu compa&ntilde;era de viaje para la peregrinaci&oacute;n. Te mostramos en breve para qu&eacute; sirve cada secci&oacute;n, as&iacute; le sac&aacute;s el m&aacute;ximo provecho desde el primer d&iacute;a.'},
   {icon:'&#127968;',title:'Inicio',text:'De un vistazo: el d&iacute;a del viaje en que est&aacute;s, lo que toca hacer hoy seg&uacute;n el cronograma, las intenciones del d&iacute;a y un resumen de tus gastos.'},
-  {icon:'&#128218;',title:'Bit&aacute;cora',text:'Escrib&iacute; la cr&oacute;nica de cada d&iacute;a con tus fotos y reflexiones. La app puede armarte autom&aacute;ticamente un resumen corto para compartir por WhatsApp.'},
-  {icon:'&#9992;',title:'Transporte',text:'Carg&aacute; tus vuelos (hasta pod&eacute;s subir el PDF del pasaje y se completan solos) y los traslados terrestres. Todo se refleja en tu cronograma autom&aacute;ticamente.'},
+  {icon:'&#128218;',title:'Bit&aacute;cora',text:'Escrib&iacute; la cr&oacute;nica de cada d&iacute;a con tus fotos y cosechas. La app puede armarte autom&aacute;ticamente un resumen corto para compartir por Whatsapp.'},
+  {icon:'&#9992;',title:'Transporte',text:'Carg&aacute; tus vuelos (hasta pod&eacute;s subir el PDF y se completan solos) y los traslados terrestres de tu inter&eacute;s. Todo se refleja en el cronograma autom&aacute;ticamente.'},
   {icon:'&#128176;',title:'Finanzas',text:'Segu&iacute; el tipo de cambio actualizado, registr&aacute; tus gastos por categor&iacute;a y mir&aacute; en qu&eacute; se te va la plata con gr&aacute;ficos simples.'},
-  {icon:'&#128591;',title:'Intenciones y Traductor',text:'Guard&aacute; las intenciones de oraci&oacute;n del grupo, y us&aacute; el traductor con dictado por voz para el d&iacute;a a d&iacute;a en espa&ntilde;ol, italiano, ingl&eacute;s o franc&eacute;s.'},
+  {icon:'&#128591;',title:'Intenciones y Traductor',text:'Guard&aacute; las intenciones de oraci&oacute;n para tu viaje, y us&aacute; el traductor con dictado por voz para el d&iacute;a a d&iacute;a en 4 idiomas.'},
   {icon:'&#9776;',title:'Un viaje, o varios',text:'Tocando "Itineritas" arriba de todo pod&eacute;s crear nuevos viajes o cambiar entre los que ya ten&eacute;s, sin perder informaci&oacute;n de ninguno.'}
 ];
 var onbIndex=0;
@@ -2120,7 +2123,7 @@ function val(id){return document.getElementById(id).value;}
 function esc(s){var d=document.createElement('div');d.textContent=String(s||'');return d.innerHTML;}
 function formatDT(dt){if(!dt)return'';try{return new Date(dt).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){return dt;}}
 var toastTimer;
-function showToast(msg){var t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#8b1a1a;color:#fdf6e9;padding:9px 20px;border-radius:20px;font-size:0.8667rem;z-index:999;opacity:0;transition:opacity .2s;pointer-events:none;max-width:280px;text-align:center';document.body.appendChild(t);}t.textContent=msg;t.style.opacity='1';clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.style.opacity='0';},2800);}
+function showToast(msg){var t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#2596be;color:#fdf6e9;padding:14px 24px;border-radius:14px;font-size:0.9333rem;font-weight:600;z-index:999;opacity:0;transition:opacity .2s;pointer-events:none;max-width:280px;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.25)';document.body.appendChild(t);}t.textContent=msg;t.style.opacity='1';clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.style.opacity='0';},2800);}
 
 // ===== OFFLINE / CONEXION =====
 var isOnline=navigator.onLine;
