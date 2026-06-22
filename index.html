@@ -1427,28 +1427,7 @@ function processPDF(file){
 function extractFlightsWithGemini(text){
   document.getElementById('vuelo-pdf-msg').textContent='Analizando vuelos...';
 
-  // PRE-PROCESAMIENTO: normalizar el texto extraido por pdf.js antes de mandarlo a Gemini.
-  // pdf.js extrae texto de PDFs con columnas sin respetar los espacios originales,
-  // lo que genera patrones predecibles que podemos arreglar con regex antes de que
-  // la IA lo lea, reduciendo significativamente su margen de error.
-  function preprocess(t){
-    // Insertar espacio entre nombre de mes pegado a numero de dia o de hora:
-    // "30June12:10" -> "30 June 12:10", "01July05:10" -> "01 July 05:10"
-    t=t.replace(/(\d{1,2})(January|February|March|April|May|June|July|August|September|October|November|December)(\d{2}:\d{2})/g,'$1 $2 $3');
-    // Insertar espacio antes de ciudad pegada: "BuenosAires," -> "Buenos Aires,"
-    // Patron: letra minuscula seguida de letra mayuscula (camelCase sin espacio)
-    t=t.replace(/([a-z])([A-Z])/g,'$1 $2');
-    // Normalizar "Terminal:P-Departures" y similares: agregar espacio despues de los dos puntos
-    t=t.replace(/Terminal:([^\s])/g,'Terminal: $1');
-    // Limpiar "Check-in" que aparece como columna flotante en el PDF de Amadeus
-    // y no es informacion de vuelo, sino un link de accion que queda mal posicionado
-    t=t.replace(/^Check-in\s*$/mg,'');
-    // Limpiar "Arrivals Terminal" que a veces aparece en linea separada
-    t=t.replace(/^Arrivals\s*Terminal\s*$/mg,'');
-    return t;
-  }
-
-  var cleanText=preprocess(text);
+  var cleanText=preprocessFlightText(text);
 
   var prompt=
     'Sos un experto en extraer datos estructurados de pasajes aereos en texto plano.\n\n'+
@@ -1571,68 +1550,126 @@ function addExtractedFlights(arr){
 }
 
 function extractFlightsLocally(text){
+  // Pre-procesar igual que antes de mandar a Gemini
+  text=preprocessFlightText(text);
+
   var flights=[];
-  var flightCodeRe=/\b([A-Z]{2})\s?(\d{3,4})\b/g;
-  var seen={};var m;
-  while((m=flightCodeRe.exec(text))){
-    var code=m[1]+m[2];
-    if(seen[code])continue;
-    seen[code]=true;
-    var pos=m.index;
-    var ctx=text.slice(Math.max(0,pos-300),Math.min(text.length,pos+400));
-    var fecha=findDateInText(ctx);
-    var times=findTimesInText(ctx);
-    var cities=findCitiesNearDepartureArrival(ctx);
-    var ruta;
-    if(cities.length>=2)ruta=cities[0]+' - '+cities[1];
-    else{
-      var airports=findAirportCodesInText(ctx,code);
-      ruta=airports.length>=2?airports[0]+' - '+airports[1]:(airports.length===1?airports[0]+' - ':'Completar ruta');
+  var MONTHS={january:'01',february:'02',march:'03',april:'04',may:'05',june:'06',
+              july:'07',august:'08',september:'09',october:'10',november:'11',december:'12'};
+
+  function monthNum(name){return MONTHS[name.toLowerCase()]||null;}
+
+  function parseDateStr(day,monthName,year){
+    var m=monthNum(monthName);
+    if(!m)return null;
+    return year+'-'+m+'-'+day.toString().padStart(2,'0');
+  }
+
+  // Extraer el anio del documento (del encabezado de fecha mas temprano)
+  var yearMatch=text.match(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s+\d{1,2}\s+\w+\s+(\d{4})\b/i);
+  var docYear=yearMatch?yearMatch[2]:'2026';
+
+  // Dividir el texto en bloques de vuelo usando los encabezados de fecha como separadores
+  // Patron: "Tuesday 30 June 2026" o "Monday 28 July 2026" etc.
+  var blockHeaderRe=/((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s+(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4}))/gi;
+
+  // Encontrar todas las posiciones de encabezados de fecha
+  var headers=[];
+  var hm;
+  while((hm=blockHeaderRe.exec(text))!==null){
+    headers.push({idx:hm.index,day:hm[2],month:hm[3],year:hm[4],full:hm[1]});
+  }
+
+  if(headers.length===0){
+    // Sin encabezados de fecha: fallback minimo, devolver array vacio para que
+    // el mensaje correcto aparezca
+    return [];
+  }
+
+  // Para cada bloque (de un encabezado al siguiente), extraer vuelos
+  for(var h=0;h<headers.length;h++){
+    var blockStart=headers[h].idx;
+    var blockEnd=h+1<headers.length?headers[h+1].idx:text.length;
+    var block=text.slice(blockStart,blockEnd);
+    var blockYear=headers[h].year;
+
+    // Encontrar todos los numeros de vuelo en este bloque
+    // Formato: "Air Europa UX 042" o "Iberia IB 3454" etc.
+    // Buscar patron: codigo IATA de 2 letras + espacio opcional + numero de vuelo
+    // pero EXCLUIR e-ticket que viene en formato "UX 996-5011377259"
+    var flightRe=/\b([A-Z]{2})\s?(\d{3,4})\b(?!\s*[-]\d{5,})/g;
+    var fm;
+    while((fm=flightRe.exec(block))!==null){
+      var airlineCode=fm[1];
+      var flightNum=fm[2];
+      var flightId=airlineCode+flightNum;
+
+      // Evitar duplicados
+      var alreadyAdded=flights.some(function(f){return f.aerolinea&&f.aerolinea.indexOf(flightId)>=0;});
+      if(alreadyAdded)continue;
+
+      // Contexto alrededor de este vuelo dentro del bloque
+      var ctxStart=Math.max(0,fm.index-50);
+      var ctxEnd=Math.min(block.length,fm.index+600);
+      var ctx=block.slice(ctxStart,ctxEnd);
+
+      // Extraer nombre de aerolinea (texto antes del codigo de vuelo en esa linea)
+      var airlineNameM=ctx.match(/([A-Z][a-zA-Z\s]+?)\s+[A-Z]{2}\s?\d{3,4}/);
+      var airlineName=airlineNameM?airlineNameM[1].trim():'';
+      // Limpiar nombre: quitar "Operated by" y similares
+      airlineName=airlineName.replace(/\(Operated by.*$/i,'').trim();
+
+      // Extraer Departure
+      var depM=ctx.match(/Departure\s+(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{2}:\d{2})\s+([A-Z][a-zA-Z\s]+?),\s*\([^)]+\)/i);
+      var depDate=null,depTime=null,depCity=null,depTerminal=null;
+      if(depM){
+        depDate=parseDateStr(depM[1],depM[2],blockYear);
+        depTime=depM[3];
+        depCity=depM[4].trim();
+        // Buscar terminal de salida
+        var termM=ctx.match(/Departure[^]*?Terminal:\s*([^\n]+)/i);
+        if(termM)depTerminal=termM[1].trim();
+      }
+
+      // Extraer Arrival
+      var arrM=ctx.match(/Arrival\s+(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{2}:\d{2})\s+([A-Z][a-zA-Z\s]+?),\s*\([^)]+\)/i);
+      var arrDate=null,arrTime=null,arrCity=null;
+      if(arrM){
+        arrDate=parseDateStr(arrM[1],arrM[2],blockYear);
+        arrTime=arrM[3];
+        arrCity=arrM[4].trim();
+      }
+
+      // Solo agregar si tenemos al menos la aerolinea y algo de fecha
+      if(!depDate&&!depTime)continue;
+
+      var ruta=(depCity&&arrCity)?depCity+' - '+arrCity:'Completar ruta';
+      var salida=depDate&&depTime?depDate+'T'+depTime:'';
+      var llegada=arrDate&&arrTime?arrDate+'T'+arrTime:'';
+
+      flights.push({
+        ruta:ruta,
+        aerolinea:(airlineName?airlineName+' ':'')+flightId,
+        fecha:depDate||'',
+        salida:salida,
+        llegada:llegada,
+        terminal:depTerminal||'',
+        notas:'Detectado automáticamente - revisá y completá'
+      });
     }
-    flights.push({
-      ruta:ruta,
-      aerolinea:code,
-      fecha:fecha||'',
-      salida:fecha&&times[0]?fecha+'T'+times[0]:'',
-      llegada:fecha&&times[1]?fecha+'T'+times[1]:'',
-      terminal:'',
-      notas:'Detectado automáticamente - revisar y completar'
-    });
   }
   return flights;
 }
-// Busca el patron "Departure ... NombreCiudad," y "Arrival ... NombreCiudad,"
-// que es como aparece en pasajes tipo CheckMyTrip/Amadeus (ciudad seguida de
-// coma y el aeropuerto entre parentesis). Sirve de respaldo cuando no hay
-// codigos IATA de 3 letras sueltos en el texto.
-function findCitiesNearDepartureArrival(ctx){
-  var cities=[];
-  var depM=ctx.match(/Departure[^A-Za-z]*[\d:]*\s*[A-Za-z]*\s*\d*\s*([A-Z][a-zA-Z\u00C0-\u00FF\s]+?),\s*\(/);
-  if(depM)cities.push(depM[1].trim());
-  var arrM=ctx.match(/Arrival[^A-Za-z]*[\d:]*\s*[A-Za-z]*\s*\d*\s*([A-Z][a-zA-Z\u00C0-\u00FF\s]+?),\s*\(/);
-  if(arrM)cities.push(arrM[1].trim());
-  return cities;
+
+function preprocessFlightText(t){
+  t=t.replace(/(\d{1,2})(January|February|March|April|May|June|July|August|September|October|November|December)(\d{2}:\d{2})/g,'$1 $2 $3');
+  t=t.replace(/([a-z])([A-Z])/g,'$1 $2');
+  t=t.replace(/Terminal:([^\s])/g,'Terminal: $1');
+  t=t.replace(/^Check-in\s*$/mg,'');
+  t=t.replace(/^Arrivals\s*Terminal\s*$/mg,'');
+  return t;
 }
-function findDateInText(ctx){
-  var m=ctx.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
-  if(m)return m[0];
-  m=ctx.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})\b/);
-  if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
-  var months={ene:'01',jan:'01',feb:'02',mar:'03',abr:'04',apr:'04',may:'05',jun:'06',jul:'07',ago:'08',aug:'08',sep:'09',oct:'10',nov:'11',dic:'12',dec:'12'};
-  m=ctx.match(/\b(\d{1,2})\s*(?:de\s*)?([a-zA-Z]{3,9})\.?\s*(?:de\s*)?(\d{4})\b/i);
-  if(m){var mon=m[2].toLowerCase().slice(0,3);if(months[mon])return m[3]+'-'+months[mon]+'-'+m[1].padStart(2,'0');}
-  return null;
-}
-function findTimesInText(ctx){
-  var re=/\b([01]?\d|2[0-3]):([0-5]\d)\b/g;var times=[];var m;
-  while((m=re.exec(ctx))){var t=m[1].padStart(2,'0')+':'+m[2];if(times.indexOf(t)===-1)times.push(t);if(times.length>=2)break;}
-  return times;
-}
-function findAirportCodesInText(ctx,excludeCode){
-  var re=/\b[A-Z]{3}\b/g;var codes=[];var m;
-  while((m=re.exec(ctx))){if(codes.indexOf(m[0])===-1&&m[0]!==excludeCode.slice(0,3))codes.push(m[0]);if(codes.length>=2)break;}
-  return codes;
-}
+
 function extractFN(s){var m=s.match(/([A-Z]{2})\s*(\d{1,4})/i);return m?m[1].toUpperCase()+m[2]:null;}
 function renderVuelos(){
   var list=document.getElementById('vuelos-list');
