@@ -99,6 +99,15 @@ body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink)
 .auth-tab.active{background:var(--crimson);color:#fdf6e9}
 .field-label{font-size:0.7333rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);font-weight:500;margin-bottom:5px;display:block}
 .auth-input{width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:0.6em 14px;font-size:1.0667rem;font-family:'Inter',sans-serif;background:var(--input-bg);color:var(--ink);margin-bottom:12px}
+.pass-wrap{position:relative;margin-bottom:12px}
+.pass-wrap .auth-input,.pass-wrap input{margin-bottom:0;padding-right:44px;width:100%}
+.btn-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--ink3);padding:4px;line-height:1}
+.forgot-link{text-align:right;margin:-6px 0 10px;font-size:0.8rem}
+.forgot-link button{background:none;border:none;color:var(--crimson);cursor:pointer;font-size:0.8rem;font-family:'Inter',sans-serif;text-decoration:underline;padding:0}
+.reset-step{display:none}
+.reset-step.active{display:block}
+.reset-code-inputs{display:flex;gap:8px;justify-content:center;margin:16px 0}
+.reset-code-input{width:42px;height:52px;text-align:center;font-size:1.4667rem;font-weight:700;font-family:'Cinzel',serif;border:0.5px solid var(--border2);border-radius:8px;background:var(--input-bg);color:var(--crimson)}
 .auth-input:focus{outline:none;border-color:var(--gold);background:var(--input-bg-focus)}
 .remember-row{display:flex;align-items:center;gap:8px;margin-bottom:14px}
 .remember-row input[type=checkbox]{width:auto;margin-bottom:0;cursor:pointer;accent-color:var(--crimson)}
@@ -306,33 +315,105 @@ input[type="file"]{display:none}
   <div class="auth-subtitle">App ad peregrinationem tuam<br>La app para tu peregrinaci&oacute;n</div>
   <div class="auth-card">
     <div class="auth-divider"></div>
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Iniciar sesion</button>
-      <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Crear cuenta</button>
-    </div>
+
+    <!-- PANEL LOGIN -->
     <div id="panel-login">
-      <span class="field-label">Correo electronico</span>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Iniciar sesi&oacute;n</button>
+        <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Crear cuenta</button>
+      </div>
+      <span class="field-label">Correo electr&oacute;nico</span>
       <input class="auth-input" type="email" id="login-email" placeholder="nombre@ejemplo.com" autocomplete="email">
       <span class="field-label">Contrase&ntilde;a</span>
-      <input class="auth-input" type="password" id="login-pass" placeholder="........" autocomplete="current-password">
-      <div class="remember-row"><input type="checkbox" id="login-remember" checked><label for="login-remember">Mantener sesion iniciada</label></div>
+      <div class="pass-wrap">
+        <input class="auth-input" type="password" id="login-pass" placeholder="........" autocomplete="current-password">
+        <button class="btn-eye" type="button" onclick="togglePassVis('login-pass',this)" title="Ver contrase&ntilde;a">&#128065;</button>
+      </div>
+      <div class="forgot-link"><button type="button" onclick="showResetPanel()">Olvidé mi contraseña</button></div>
+      <div class="remember-row"><input type="checkbox" id="login-remember" checked><label for="login-remember">Mantener sesi&oacute;n iniciada</label></div>
       <div class="auth-error" id="login-error"></div>
       <button class="btn-auth" id="btn-login" onclick="doLogin()">Ingresar</button>
     </div>
+
+    <!-- PANEL REGISTRO -->
     <div id="panel-register" style="display:none">
+      <div class="auth-tabs">
+        <button class="auth-tab" id="tab-login-2" onclick="switchAuthTab('login')">Iniciar sesi&oacute;n</button>
+        <button class="auth-tab active" id="tab-register-2" onclick="switchAuthTab('register')">Crear cuenta</button>
+      </div>
       <span class="field-label">Nombre</span>
       <input class="auth-input" type="text" id="reg-name" placeholder="Tu nombre">
-      <span class="field-label">Correo electronico</span>
+      <span class="field-label">Correo electr&oacute;nico</span>
       <input class="auth-input" type="email" id="reg-email" placeholder="nombre@ejemplo.com">
       <span class="field-label">Contrase&ntilde;a</span>
-      <input class="auth-input" type="password" id="reg-pass" placeholder="M&iacute;nimo 6 caracteres">
+      <div class="pass-wrap">
+        <input class="auth-input" type="password" id="reg-pass" placeholder="M&iacute;nimo 6 caracteres">
+        <button class="btn-eye" type="button" onclick="togglePassVis('reg-pass',this)" title="Ver contrase&ntilde;a">&#128065;</button>
+      </div>
       <span class="field-label">Confirmar contrase&ntilde;a</span>
-      <input class="auth-input" type="password" id="reg-pass2" placeholder="Repet&iacute; la contrase&ntilde;a">
-      <div class="remember-row"><input type="checkbox" id="reg-remember" checked><label for="reg-remember">Mantener sesion iniciada</label></div>
+      <div class="pass-wrap">
+        <input class="auth-input" type="password" id="reg-pass2" placeholder="Repet&iacute; la contrase&ntilde;a">
+        <button class="btn-eye" type="button" onclick="togglePassVis('reg-pass2',this)" title="Ver contrase&ntilde;a">&#128065;</button>
+      </div>
+      <div class="remember-row"><input type="checkbox" id="reg-remember" checked><label for="reg-remember">Mantener sesi&oacute;n iniciada</label></div>
       <div class="auth-error" id="reg-error"></div>
       <div class="auth-success" id="reg-success"></div>
       <button class="btn-auth" id="btn-register" onclick="doRegister()">Crear cuenta</button>
     </div>
+
+    <!-- PANEL RESET CONTRASEÑA (3 pasos) -->
+    <div id="panel-reset" style="display:none">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <button onclick="hideResetPanel()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--ink3);padding:0">&#8592;</button>
+        <span style="font-family:'Cinzel',serif;font-size:0.9333rem;color:var(--crimson)">Restablecer contrase&ntilde;a</span>
+      </div>
+
+      <!-- Paso 1: ingresar email -->
+      <div class="reset-step active" id="reset-step-1">
+        <p style="font-size:0.8667rem;color:var(--ink2);margin-bottom:14px">Ingres&aacute; tu correo y te mandamos un c&oacute;digo de 6 d&iacute;gitos para restablecer tu contrase&ntilde;a.</p>
+        <span class="field-label">Correo electr&oacute;nico</span>
+        <input class="auth-input" type="email" id="reset-email" placeholder="nombre@ejemplo.com" autocomplete="email">
+        <div class="auth-error" id="reset-error-1"></div>
+        <button class="btn-auth" onclick="sendResetCode()">Enviar c&oacute;digo</button>
+      </div>
+
+      <!-- Paso 2: ingresar código -->
+      <div class="reset-step" id="reset-step-2">
+        <p style="font-size:0.8667rem;color:var(--ink2);margin-bottom:4px">Te mandamos un c&oacute;digo de 6 d&iacute;gitos a <strong id="reset-email-display"></strong>.</p>
+        <p style="font-size:0.8rem;color:var(--ink3);margin-bottom:14px">Ingres&aacute;lo ac&aacute; (v&aacute;lido por 15 minutos).</p>
+        <div class="reset-code-inputs">
+          <input class="reset-code-input" type="text" maxlength="1" id="rc0" oninput="resetCodeInput(0)" onkeydown="resetCodeKey(event,0)">
+          <input class="reset-code-input" type="text" maxlength="1" id="rc1" oninput="resetCodeInput(1)" onkeydown="resetCodeKey(event,1)">
+          <input class="reset-code-input" type="text" maxlength="1" id="rc2" oninput="resetCodeInput(2)" onkeydown="resetCodeKey(event,2)">
+          <input class="reset-code-input" type="text" maxlength="1" id="rc3" oninput="resetCodeInput(3)" onkeydown="resetCodeKey(event,3)">
+          <input class="reset-code-input" type="text" maxlength="1" id="rc4" oninput="resetCodeInput(4)" onkeydown="resetCodeKey(event,4)">
+          <input class="reset-code-input" type="text" maxlength="1" id="rc5" oninput="resetCodeInput(5)" onkeydown="resetCodeKey(event,5)">
+        </div>
+        <div class="auth-error" id="reset-error-2"></div>
+        <button class="btn-auth" onclick="verifyResetCode()">Verificar c&oacute;digo</button>
+        <p style="text-align:center;margin-top:12px;font-size:0.8rem;color:var(--ink3)">
+          <button onclick="sendResetCode(true)" style="background:none;border:none;color:var(--crimson);cursor:pointer;font-size:0.8rem;font-family:'Inter',sans-serif;text-decoration:underline;padding:0">Reenviar c&oacute;digo</button>
+        </p>
+      </div>
+
+      <!-- Paso 3: nueva contraseña -->
+      <div class="reset-step" id="reset-step-3">
+        <p style="font-size:0.8667rem;color:var(--ink2);margin-bottom:14px">C&oacute;digo verificado. Ingres&aacute; tu nueva contrase&ntilde;a.</p>
+        <span class="field-label">Nueva contrase&ntilde;a</span>
+        <div class="pass-wrap">
+          <input class="auth-input" type="password" id="reset-pass-new" placeholder="M&iacute;nimo 6 caracteres">
+          <button class="btn-eye" type="button" onclick="togglePassVis('reset-pass-new',this)" title="Ver contrase&ntilde;a">&#128065;</button>
+        </div>
+        <span class="field-label">Confirmar contrase&ntilde;a</span>
+        <div class="pass-wrap">
+          <input class="auth-input" type="password" id="reset-pass-new2" placeholder="Repet&iacute; la contrase&ntilde;a">
+          <button class="btn-eye" type="button" onclick="togglePassVis('reset-pass-new2',this)" title="Ver contrase&ntilde;a">&#128065;</button>
+        </div>
+        <div class="auth-error" id="reset-error-3"></div>
+        <button class="btn-auth" onclick="saveResetPassword()">Guardar nueva contrase&ntilde;a</button>
+      </div>
+    </div>
+
     <p class="auth-footer">Ad Maiorem Pietatis Incrementum</p>
   </div>
 </div>
@@ -629,12 +710,15 @@ input[type="file"]{display:none}
     </div>
     <div class="card">
       <div class="card-title"><span>&#128273;</span> Cambiar contrase&ntilde;a</div>
-      <label>Contrase&ntilde;a actual</label><input type="password" id="pass-current" placeholder="........">
-      <label>Nueva contrase&ntilde;a</label><input type="password" id="pass-new" placeholder="M&iacute;nimo 6 caracteres">
-      <label>Confirmar nueva contrase&ntilde;a</label><input type="password" id="pass-new2" placeholder="Repet&iacute; la nueva">
-      <div class="auth-error" id="pass-error" style="margin:0 0 8px"></div>
+      <label>Contrase&ntilde;a actual</label>
+      <div class="pass-wrap"><input type="password" id="pass-current" placeholder="........" style="margin-bottom:0"><button class="btn-eye" type="button" onclick="togglePassVis('pass-current',this)">&#128065;</button></div>
+      <label style="margin-top:8px;display:block">Nueva contrase&ntilde;a</label>
+      <div class="pass-wrap"><input type="password" id="pass-new" placeholder="M&iacute;nimo 6 caracteres" style="margin-bottom:0"><button class="btn-eye" type="button" onclick="togglePassVis('pass-new',this)">&#128065;</button></div>
+      <label style="margin-top:8px;display:block">Confirmar nueva contrase&ntilde;a</label>
+      <div class="pass-wrap"><input type="password" id="pass-new2" placeholder="Repet&iacute; la nueva" style="margin-bottom:0"><button class="btn-eye" type="button" onclick="togglePassVis('pass-new2',this)">&#128065;</button></div>
+      <div class="auth-error" id="pass-error" style="margin:8px 0"></div>
       <div class="auth-success" id="pass-success" style="margin:0 0 8px"></div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="savePassword()">Cambiar contrase&ntilde;a</button>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="savePassword()">Cambiar contrase&ntilde;a</button>
     </div>
     <div class="card">
       <div class="card-title"><span>&#128161;</span> Gu&iacute;a de la app</div>
@@ -932,7 +1016,151 @@ function applyStoredTextSize(){
 function lsDel(k){try{localStorage.removeItem('rc_'+k);}catch(e){}}
 function hashPass(p){var h=5381;for(var i=0;i<p.length;i++){h=((h<<5)+h)+p.charCodeAt(i);}return(h>>>0).toString(36);}
 
-function switchAuthTab(t){document.getElementById('tab-login').classList.toggle('active',t==='login');document.getElementById('tab-register').classList.toggle('active',t==='register');document.getElementById('panel-login').style.display=t==='login'?'block':'none';document.getElementById('panel-register').style.display=t==='register'?'block':'none';}
+function switchAuthTab(t){
+  document.getElementById('tab-login').classList.toggle('active',t==='login');
+  document.getElementById('tab-register').classList.toggle('active',t==='register');
+  document.getElementById('tab-login-2').classList.toggle('active',t==='login');
+  document.getElementById('tab-register-2').classList.toggle('active',t==='register');
+  document.getElementById('panel-login').style.display=t==='login'?'block':'none';
+  document.getElementById('panel-register').style.display=t==='register'?'block':'none';
+  document.getElementById('panel-reset').style.display='none';
+}
+
+function togglePassVis(inputId,btn){
+  var inp=document.getElementById(inputId);
+  var esTexto=inp.type==='text';
+  inp.type=esTexto?'password':'text';
+  btn.textContent=esTexto?'\uD83D\uDC41':'\uD83D\uDE48';
+}
+
+// ===== RESET DE CONTRASEÑA =====
+var resetEmailGlobal='';
+var resetTokenVerificado=false;
+
+function showResetPanel(){
+  document.getElementById('panel-login').style.display='none';
+  document.getElementById('panel-register').style.display='none';
+  document.getElementById('panel-reset').style.display='block';
+  showResetStep(1);
+  hideErr('reset-error-1');hideErr('reset-error-2');hideErr('reset-error-3');
+  document.getElementById('reset-email').value='';
+  for(var i=0;i<6;i++)document.getElementById('rc'+i).value='';
+  document.getElementById('reset-pass-new').value='';
+  document.getElementById('reset-pass-new2').value='';
+  resetTokenVerificado=false;
+}
+
+function hideResetPanel(){
+  document.getElementById('panel-reset').style.display='none';
+  document.getElementById('panel-login').style.display='block';
+}
+
+function showResetStep(n){
+  for(var i=1;i<=3;i++){
+    document.getElementById('reset-step-'+i).classList.toggle('active',i===n);
+  }
+}
+
+function sendResetCode(esReenvio){
+  var email=(esReenvio?resetEmailGlobal:document.getElementById('reset-email').value.trim()).toLowerCase();
+  if(!email){showErr('reset-error-1','Ingresá tu correo.');return;}
+  hideErr('reset-error-1');
+  var btn=document.querySelector('#reset-step-1 .btn-auth');
+  if(btn)btn.textContent='Enviando...';
+  fetch('https://fobqoitnfuwvnmtsqesl.supabase.co/functions/v1/send-reset-token',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+SB_KEY},
+    body:JSON.stringify({email:email})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(btn)btn.textContent='Enviar código';
+    if(d.error){showErr('reset-error-1',d.error);return;}
+    resetEmailGlobal=email;
+    document.getElementById('reset-email-display').textContent=email;
+    for(var i=0;i<6;i++)document.getElementById('rc'+i).value='';
+    hideErr('reset-error-2');
+    showResetStep(2);
+    setTimeout(function(){document.getElementById('rc0').focus();},200);
+    if(esReenvio)showToast('Código reenviado');
+  }).catch(function(){
+    if(btn)btn.textContent='Enviar código';
+    showErr('reset-error-1','Error de conexión. Intentá de nuevo.');
+  });
+}
+
+// Navegacion automatica entre cajas del codigo
+function resetCodeInput(idx){
+  var val=document.getElementById('rc'+idx).value;
+  if(val&&idx<5)document.getElementById('rc'+(idx+1)).focus();
+  // Si se completan los 6 digitos, verificar automaticamente
+  var code='';for(var i=0;i<6;i++)code+=document.getElementById('rc'+i).value;
+  if(code.length===6)verifyResetCode();
+}
+function resetCodeKey(e,idx){
+  if(e.key==='Backspace'&&!document.getElementById('rc'+idx).value&&idx>0){
+    document.getElementById('rc'+(idx-1)).focus();
+  }
+}
+
+function verifyResetCode(){
+  var code='';
+  for(var i=0;i<6;i++)code+=document.getElementById('rc'+i).value;
+  if(code.length<6){showErr('reset-error-2','Ingresá los 6 dígitos del código.');return;}
+  hideErr('reset-error-2');
+  var btn=document.querySelector('#reset-step-2 .btn-auth');
+  if(btn)btn.textContent='Verificando...';
+  // Verificar contra Supabase: buscar token valido no expirado y no usado
+  fetch(SB_URL+'/rest/v1/password_reset_tokens?email=eq.'+encodeURIComponent(resetEmailGlobal)+'&token=eq.'+code+'&used=eq.false&select=*',{
+    headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+  }).then(function(r){return r.json();}).then(function(rows){
+    if(btn)btn.textContent='Verificar código';
+    if(!rows||rows.length===0){showErr('reset-error-2','Código incorrecto o ya utilizado.');return;}
+    var row=rows[0];
+    if(new Date(row.expires_at)<new Date()){showErr('reset-error-2','El código expiró. Pedí uno nuevo.');return;}
+    resetTokenVerificado=true;
+    showResetStep(3);
+    setTimeout(function(){document.getElementById('reset-pass-new').focus();},200);
+  }).catch(function(){
+    if(btn)btn.textContent='Verificar código';
+    showErr('reset-error-2','Error de conexión. Intentá de nuevo.');
+  });
+}
+
+function saveResetPassword(){
+  if(!resetTokenVerificado){showErr('reset-error-3','Verificá el código primero.');return;}
+  var np=document.getElementById('reset-pass-new').value;
+  var np2=document.getElementById('reset-pass-new2').value;
+  if(np.length<6){showErr('reset-error-3','Mínimo 6 caracteres.');return;}
+  if(np!==np2){showErr('reset-error-3','Las contraseñas no coinciden.');return;}
+  hideErr('reset-error-3');
+  var btn=document.querySelector('#reset-step-3 .btn-auth');
+  if(btn)btn.textContent='Guardando...';
+  var newHash=hashPass(np);
+  // Actualizar password_hash en user_data
+  fetch(SB_URL+'/rest/v1/user_data?email=eq.'+encodeURIComponent(resetEmailGlobal),{
+    method:'PATCH',
+    headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal'},
+    body:JSON.stringify({password_hash:newHash})
+  }).then(function(r){
+    if(!r.ok)throw new Error('patch failed');
+    // Marcar el token como usado
+    return fetch(SB_URL+'/rest/v1/password_reset_tokens?email=eq.'+encodeURIComponent(resetEmailGlobal),{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal'},
+      body:JSON.stringify({used:true})
+    });
+  }).then(function(){
+    if(btn)btn.textContent='Guardar nueva contraseña';
+    var emailGuardado=resetEmailGlobal;
+    showToast('Contraseña actualizada. Ya podés ingresar.');
+    resetTokenVerificado=false;
+    resetEmailGlobal='';
+    hideResetPanel();
+    document.getElementById('login-email').value=emailGuardado;
+  }).catch(function(){
+    if(btn)btn.textContent='Guardar nueva contraseña';
+    showErr('reset-error-3','Error al guardar. Intentá de nuevo.');
+  });
+}
 function showErr(id,m){var e=document.getElementById(id);e.textContent=m;e.style.display='block';}
 function hideErr(id){document.getElementById(id).style.display='none';}
 
