@@ -1364,8 +1364,51 @@ function processPDF(file){
       var pageNums=[];for(var i=1;i<=pdf.numPages;i++)pageNums.push(i);
       var textsArr=[];
       function readPage(n){
-        return pdf.getPage(n).then(function(page){return page.getTextContent();}).then(function(content){
-          return content.items.map(function(it){return it.str;}).join(' ');
+        return pdf.getPage(n).then(function(page){return page.getTextContent({normalizeWhitespace:true,disableCombineTextItems:false});}).then(function(content){
+          // Reconstruir el texto respetando la estructura de lineas del PDF.
+          // pdf.js devuelve cada fragmento de texto con su posicion (transform[5] = Y).
+          // Agrupamos los fragmentos por linea (mismo Y aproximado) y luego
+          // concatenamos lineas con salto de linea real.
+          // Esto evita el problema del PDF de Amadeus donde las columnas del layout
+          // quedan pegadas sin espacios (ej "30June12:10" en vez de "30 June 12:10").
+          var items=content.items;
+          if(!items||!items.length)return '';
+
+          // Ordenar por Y descendente (pdf usa Y creciente hacia arriba, queremos top->bottom)
+          // luego por X ascendente dentro de la misma linea
+          var withPos=items.map(function(it){
+            return {str:it.str,x:it.transform[4],y:it.transform[5],hasEOL:it.hasEOL};
+          });
+          withPos.sort(function(a,b){
+            // Agrupar por Y con tolerancia de 3pt
+            var yDiff=b.y-a.y;
+            if(Math.abs(yDiff)>3)return yDiff;
+            return a.x-b.x;
+          });
+
+          // Agrupar en lineas por Y con tolerancia
+          var lines=[];
+          var currentLine=null;
+          var currentY=null;
+          withPos.forEach(function(it){
+            if(!it.str.trim())return;
+            if(currentY===null||Math.abs(it.y-currentY)>3){
+              currentLine=[it.str];
+              currentY=it.y;
+              lines.push(currentLine);
+            } else {
+              // Mismo renglon: agregar espacio solo si el fragmento anterior
+              // no termina en espacio y el actual no empieza con espacio
+              var prev=currentLine[currentLine.length-1];
+              if(prev&&!prev.endsWith(' ')&&!it.str.startsWith(' ')){
+                currentLine.push(' '+it.str);
+              } else {
+                currentLine.push(it.str);
+              }
+            }
+          });
+
+          return lines.map(function(l){return l.join('');}).join('\n');
         });
       }
       var chain=Promise.resolve();
@@ -1383,38 +1426,88 @@ function processPDF(file){
 
 function extractFlightsWithGemini(text){
   document.getElementById('vuelo-pdf-msg').textContent='Analizando vuelos...';
+
+  // PRE-PROCESAMIENTO: normalizar el texto extraido por pdf.js antes de mandarlo a Gemini.
+  // pdf.js extrae texto de PDFs con columnas sin respetar los espacios originales,
+  // lo que genera patrones predecibles que podemos arreglar con regex antes de que
+  // la IA lo lea, reduciendo significativamente su margen de error.
+  function preprocess(t){
+    // Insertar espacio entre nombre de mes pegado a numero de dia o de hora:
+    // "30June12:10" -> "30 June 12:10", "01July05:10" -> "01 July 05:10"
+    t=t.replace(/(\d{1,2})(January|February|March|April|May|June|July|August|September|October|November|December)(\d{2}:\d{2})/g,'$1 $2 $3');
+    // Insertar espacio antes de ciudad pegada: "BuenosAires," -> "Buenos Aires,"
+    // Patron: letra minuscula seguida de letra mayuscula (camelCase sin espacio)
+    t=t.replace(/([a-z])([A-Z])/g,'$1 $2');
+    // Normalizar "Terminal:P-Departures" y similares: agregar espacio despues de los dos puntos
+    t=t.replace(/Terminal:([^\s])/g,'Terminal: $1');
+    // Limpiar "Check-in" que aparece como columna flotante en el PDF de Amadeus
+    // y no es informacion de vuelo, sino un link de accion que queda mal posicionado
+    t=t.replace(/^Check-in\s*$/mg,'');
+    // Limpiar "Arrivals Terminal" que a veces aparece en linea separada
+    t=t.replace(/^Arrivals\s*Terminal\s*$/mg,'');
+    return t;
+  }
+
+  var cleanText=preprocess(text);
+
   var prompt=
-    'Sos un experto en interpretar itinerarios aereos (pasajes emitidos por agencias de viaje, formato tipo "CheckMyTrip"/Amadeus, o e-tickets de aerolineas). '+
-    'Del texto extraido de un PDF, identifica TODOS los segmentos de vuelo (cada tramo con su propio numero de vuelo es un vuelo separado, incluso si son escalas del mismo viaje).\n\n'+
+    'Sos un experto en extraer datos estructurados de pasajes aereos en texto plano.\n\n'+
+    'El texto fue extraido de un PDF de agencia de viajes con pdf.js. El PDF usa un layout '+
+    'en columnas tipo Amadeus/CheckMyTrip. Incluso despues de pre-procesar el texto, pueden '+
+    'quedar algunas palabras pegadas o datos en lineas separadas por el corte de columna.\n\n'+
 
-    'COMO ESTA ORGANIZADO EL TEXTO (leelo con atencion, el orden de las lineas puede venir mezclado porque se extrajo de un PDF):\n'+
-    '- Cada segmento suele empezar con una fecha en formato dia-de-semana + dia + mes + anio, ej: "Tuesday 30 June 2026". Esa fecha es del DIA DE SALIDA de ESE segmento especifico.\n'+
-    '- Debajo aparece la aerolinea operadora y el numero de vuelo, ej: "Air Europa UX 042" o "Air Europa UX 1042 (Operated by Air Europa Express)". El codigo de vuelo real es el que sigue al nombre (UX 042 = UX042), ignora cual aerolinea "opera" si es distinta de la que vendio el ticket, pero igual incluila en el nombre si aparece.\n'+
-    '- Luego "Departure" con hora + ciudad de origen, y "Arrival" con hora + ciudad de destino. Formato tipico: "Departure 30 June 12:10 Buenos Aires, (Ministro Pistarini)". Ahi "30 June" es el dia de salida (puede repetir o no el anio, asumi el mismo anio que la fecha del encabezado de ese segmento) y "12:10" es la hora.\n'+
-    '- El nombre de la ciudad viene ANTES de la coma y el parentesis: en "Madrid, (Adolfo Suarez Barajas) (+) Terminal: 1 - T1", la ciudad es "Madrid", lo que esta entre parentesis es el nombre del AEROPUERTO (no lo confundas con terminal), y "(+)" es solo un simbolo decorativo sin significado, ignoralo.\n'+
-    '- La palabra "Terminal:" seguida de texto (ej: "Terminal: 1 - T1" o "Terminal: P - Departures Terminal") es la terminal del aeropuerto, NO es un codigo IATA de 3 letras. Si no aparece esta palabra explicitamente, terminal queda vacio.\n'+
-    '- "Arrival" puede tener una fecha distinta a "Departure" si el vuelo cruza la medianoche (overnight) — fijate si el dia de la semana o la fecha indicada junto a Arrival es distinta a la de Departure.\n\n'+
+    'COMO RECONOCER CADA VUELO:\n'+
+    '- Cada vuelo empieza con una linea de fecha de encabezado: "Tuesday 30 June 2026", '+
+    '"Tuesday 28 July 2026", etc. Esa fecha incluye el ANIO del vuelo.\n'+
+    '- Luego el nombre de la aerolinea y numero de vuelo, ej: "Air Europa UX 042 (Operated by Air Europa, UX)"\n'+
+    '- Luego "Departure" con dia+mes+hora (pueden ir pegados), luego ciudad de origen (puede tener espacios faltantes), luego "Terminal: ..." de salida.\n'+
+    '- Luego "Arrival" con dia+mes+hora y ciudad de destino.\n'+
+    '- La ciudad va ANTES del parentesis con el aeropuerto: en "Buenos Aires,(Ministro Pistarini)(+)" la ciudad es "Buenos Aires".\n'+
+    '- "(+)" es decoracion del formato Amadeus, ignoralo.\n'+
+    '- "Check-in" y "Arrivals Terminal" son artefactos del PDF, no son datos de vuelo.\n\n'+
 
-    'REGLAS CRITICAS para cada campo del resultado:\n'+
-    '1. "ruta": SIEMPRE "Ciudad de origen - Ciudad de destino" en ese ORDEN exacto (origen = donde despega = junto a "Departure"; destino = donde aterriza = junto a "Arrival"). Usa el nombre de la ciudad, no el del aeropuerto ni su codigo. Ej: "Buenos Aires - Madrid", nunca al reves.\n'+
-    '2. "aerolinea": nombre de la aerolinea + numero de vuelo pegado al codigo IATA de 2 letras, ej: "Air Europa UX042". Si el texto separa el codigo y el numero con espacio (ej "UX 042"), unilos sin espacio en el resultado.\n'+
-    '3. "fecha": formato YYYY-MM-DD, la fecha LOCAL de SALIDA de ese segmento especifico (no la fecha de emision del documento, que suele aparecer al principio del PDF como "Document Issue Date" y NO es un vuelo).\n'+
-    '4. "salida": formato YYYY-MM-DDTHH:MM, fecha y hora local exacta de "Departure" de ese segmento.\n'+
-    '5. "llegada": formato YYYY-MM-DDTHH:MM. Si "Arrival" muestra una fecha/dia distinto al de "Departure" (overnight), usa esa fecha distinta. Si no se menciona fecha de llegada explicita, calculala sumando la duracion del vuelo si esta indicada (ej "Duration 12:00"), o si no hay duracion, asumi mismo dia que la salida.\n'+
-    '6. "terminal": el texto que sigue literalmente a la palabra "Terminal:" en la seccion de Departure de ese segmento (ej "P - Departures Terminal" o "1 - T1"). Si no aparece la palabra "Terminal:", dejalo vacio. NUNCA pongas ahi un codigo de aeropuerto de 3 letras.\n'+
-    '7. "notas": codigo de reserva / booking reference / PNR (normalmente 6 caracteres alfanumericos en mayuscula, suele decir "Booking ref:" o "Airline Booking Reference"). Si hay numero de e-ticket, podes agregarlo tambien separado por coma. Si no hay nada, cadena vacia.\n'+
-    '8. Un viaje de ida y vuelta con escalas tiene VARIOS segmentos: extraelos TODOS como vuelos independientes, en el orden cronologico en que aparecen en el texto, cada uno con su propia fecha/hora/ruta.\n'+
-    '9. NO inventes vuelos que no esten explicitamente en el texto. Si un dato puntual no aparece, dejalo vacio en vez de adivinarlo.\n'+
-    '10. NO repitas el mismo segmento de vuelo dos veces aunque el texto lo mencione mas de una vez (por ejemplo en una seccion de resumen y otra vez con el detalle de "Check-in").\n\n'+
+    'REGLAS CRITICAS:\n'+
+    '1. "ruta": "Ciudad Departure - Ciudad Arrival". Ej: "Buenos Aires - Madrid". NUNCA al reves.\n'+
+    '2. "aerolinea": nombre + codigo + numero SIN espacio entre codigo y numero. Ej: "Air Europa UX042".\n'+
+    '3. "fecha": YYYY-MM-DD de la salida. Usa el anio del encabezado del bloque.\n'+
+    '4. "salida": YYYY-MM-DDTHH:MM. Combina anio del encabezado + dia/mes/hora del Departure.\n'+
+    '5. "llegada": YYYY-MM-DDTHH:MM. Si Arrival tiene fecha distinta (vuelo nocturno), usa esa fecha.\n'+
+    '6. "terminal": texto despues de "Terminal:" en la linea Departure. Puede estar en linea siguiente si el PDF lo corto.\n'+
+    '7. "notas": el Booking Reference de 6 caracteres (cerca de "Booking ref:" o "Airline Booking Reference").\n'+
+    '8. Si hay dos vuelos el mismo dia (ej: dos vuelos el 28 de julio), son vuelos DISTINTOS, no el mismo.\n'+
+    '9. "Tuesday 28 July 2026" puede aparecer dos veces: al final de pagina 1 y al inicio de pagina 2. Es el mismo bloque de fecha para los vuelos de ese dia.\n'+
+    '10. "Document Issue Date" es la fecha de emision del documento, NO un vuelo. Ignorala.\n\n'+
 
-    'Respondé UNICAMENTE con un array JSON valido, empezando con [ y terminando con ], sin texto adicional, sin markdown, sin explicaciones.\n\n'+
-    'Ejemplo de un caso con ida + vuelta con 1 escala (3 segmentos en total), basado en un itinerario real:\n'+
-    '[\n'+
-    '{"ruta":"Buenos Aires - Madrid","aerolinea":"Air Europa UX042","fecha":"2026-06-30","salida":"2026-06-30T12:10","llegada":"2026-07-01T05:10","terminal":"P - Departures Terminal","notas":"AJUPCL"},\n'+
-    '{"ruta":"Rome - Madrid","aerolinea":"Air Europa UX1042","fecha":"2026-07-28","salida":"2026-07-28T16:35","llegada":"2026-07-28T19:10","terminal":"1","notas":"AJUPCL"},\n'+
-    '{"ruta":"Madrid - Buenos Aires","aerolinea":"Air Europa UX041","fecha":"2026-07-28","salida":"2026-07-28T23:55","llegada":"2026-07-29T07:40","terminal":"1 - T1","notas":"AJUPCL"}\n'+
-    ']\n\n'+
-    'TEXTO DEL PASAJE (leelo completo, de principio a fin, antes de responder):\n---\n'+text.slice(0,12000)+'\n---';
+    'EJEMPLO REAL: este es el texto extraido de un PDF de ejemplo y el JSON correcto esperado.\n\n'+
+    'INPUT EJEMPLO:\n'+
+    '```\n'+
+    'Your trip Booking ref: AJUPCL\n'+
+    'Document Issue Date: 13 March 2026\n'+
+    'Tuesday 30 June 2026\n'+
+    'Air Europa UX 042 (Operated by Air\n'+
+    'Europa, UX)\n'+
+    'Departure 30 June 12:10 Buenos Aires,(Ministro Pistarini)(+) Terminal: P - Departures Terminal\n'+
+    'Arrival 01 July 05:10 Madrid,(Adolfo Suarez Barajas)(+) Terminal: 1 - T1\n'+
+    'Tuesday 28 July 2026\n'+
+    'Air Europa UX 1042 (Operated by Air\n'+
+    'Europa Express)\n'+
+    'Departure 28 July 16:35 Rome,(Fiumicino)(+) Terminal: 1\n'+
+    'Arrival 28 July 19:10 Madrid,(Adolfo Suarez Barajas)(+) Terminal: 2 - T2\n'+
+    'Tuesday 28 July 2026\n'+
+    'Air Europa UX 041 (Operated by Air\n'+
+    'Europa, UX)\n'+
+    'Departure 28 July 23:55 Madrid,(Adolfo Suarez Barajas)(+) Terminal: 1 - T1\n'+
+    'Arrival 29 July 07:40 Buenos Aires,(Ministro Pistarini)(+)\n'+
+    'Airline Booking Reference(s)\n'+
+    'UX (Air Europa): AJUPCL\n'+
+    '```\n\n'+
+    'OUTPUT ESPERADO PARA ESE EJEMPLO:\n'+
+    '[{"ruta":"Buenos Aires - Madrid","aerolinea":"Air Europa UX042","fecha":"2026-06-30","salida":"2026-06-30T12:10","llegada":"2026-07-01T05:10","terminal":"P - Departures Terminal","notas":"AJUPCL"},{"ruta":"Rome - Madrid","aerolinea":"Air Europa UX1042","fecha":"2026-07-28","salida":"2026-07-28T16:35","llegada":"2026-07-28T19:10","terminal":"1","notas":"AJUPCL"},{"ruta":"Madrid - Buenos Aires","aerolinea":"Air Europa UX041","fecha":"2026-07-28","salida":"2026-07-28T23:55","llegada":"2026-07-29T07:40","terminal":"1 - T1","notas":"AJUPCL"}]\n\n'+
+
+    'Ahora aplica exactamente las mismas reglas al siguiente texto (que puede ser de un pasaje diferente).\n'+
+    'Responde UNICAMENTE con el array JSON, sin texto adicional ni markdown.\n\n'+
+    'TEXTO A ANALIZAR:\n---\n'+cleanText.slice(0,14000)+'\n---';
+
   tryGemini(['gemini-1.5-flash','gemini-1.5-flash-8b'],prompt,function(resp){
     var arr=null;
     if(resp){
@@ -1424,14 +1517,27 @@ function extractFlightsWithGemini(text){
         if(start>=0&&end>start)clean=clean.slice(start,end+1);
         arr=JSON.parse(clean);
         if(!Array.isArray(arr))arr=[arr];
-        // Filtrar entradas vacias o invalidas
-        arr=arr.filter(function(f){return f&&(f.ruta||f.aerolinea)&&f.ruta!=='Ciudad de salida - Ciudad de llegada';});
+        // Filtrar entradas claramente invalidas
+        arr=arr.filter(function(f){
+          if(!f)return false;
+          if(!f.ruta&&!f.aerolinea)return false;
+          if(f.ruta==='Ciudad de salida - Ciudad de llegada')return false;
+          return true;
+        });
+        // Deduplicar por aerolinea+salida en caso de que Gemini devuelva duplicados
+        var seen={};
+        arr=arr.filter(function(f){
+          var key=(f.aerolinea||'')+'|'+(f.salida||f.fecha||'');
+          if(seen[key])return false;
+          seen[key]=true;
+          return true;
+        });
       }catch(ex){arr=null;}
     }
     if(arr&&arr.length){
       var count=addExtractedFlights(arr);
       if(count>0){
-        document.getElementById('vuelo-pdf-msg').textContent=count+' vuelo(s) cargados. Revisa y corrige los datos si es necesario.';
+        document.getElementById('vuelo-pdf-msg').textContent=count+' vuelo(s) cargados. Revis\u00e1 y corrig\u00e9 los datos si es necesario.';
         showToast(count+' vuelo(s) cargados desde PDF');
         return;
       }
@@ -1439,10 +1545,10 @@ function extractFlightsWithGemini(text){
     var local=extractFlightsLocally(text);
     var count2=addExtractedFlights(local);
     if(count2>0){
-      document.getElementById('vuelo-pdf-msg').textContent=count2+' vuelo(s) detectados (sin IA). IMPORTANTE: revisa y completa cada dato, especialmente origen y destino.';
-      showToast(count2+' vuelo(s) detectados - revisa los datos');
+      document.getElementById('vuelo-pdf-msg').textContent=count2+' vuelo(s) detectados (sin IA). IMPORTANTE: revis\u00e1 y complet\u00e1 cada dato, especialmente origen y destino.';
+      showToast(count2+' vuelo(s) detectados - revis\u00e1 los datos');
     }else{
-      document.getElementById('vuelo-pdf-msg').textContent='No se detectaron vuelos automáticamente. Cargalos manualmente con "+ Agregar vuelo".';
+      document.getElementById('vuelo-pdf-msg').textContent='No se detectaron vuelos autom\u00e1ticamente. Carg\u00e1los manualmente con "+ Agregar vuelo".';
     }
   });
 }
