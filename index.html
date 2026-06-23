@@ -380,7 +380,7 @@ input[type="file"]{display:none}
       <!-- Paso 2: ingresar código -->
       <div class="reset-step" id="reset-step-2">
         <p style="font-size:0.8667rem;color:var(--ink2);margin-bottom:4px">Te mandamos un c&oacute;digo de 6 d&iacute;gitos a <strong id="reset-email-display"></strong>.</p>
-        <p style="font-size:0.8rem;color:var(--ink3);margin-bottom:14px">Ingres&aacute;lo ac&aacute; (v&aacute;lido por 15 minutos).</p>
+        <p style="font-size:0.8rem;color:var(--ink3);margin-bottom:14px">Ingresalo ac&aacute; (v&aacute;lido por 15 minutos).</p>
         <div class="reset-code-inputs">
           <input class="reset-code-input" type="text" maxlength="1" id="rc0" oninput="resetCodeInput(0)" onkeydown="resetCodeKey(event,0)">
           <input class="reset-code-input" type="text" maxlength="1" id="rc1" oninput="resetCodeInput(1)" onkeydown="resetCodeKey(event,1)">
@@ -665,10 +665,10 @@ input[type="file"]{display:none}
       <button class="btn btn-accent" style="flex:1;justify-content:center" id="btn-translate" onclick="doTranslateNow()">Traducir ahora</button>
       <button class="btn btn-sm" onclick="clearAllTrad()">Limpiar</button>
     </div>
-    <div class="lang-panel"><div class="lang-header"><div class="lang-label">Espa&ntilde;ol</div><button class="btn btn-sm" id="btn-mic-es" onclick="toggleMicTrad('es')">Mic</button></div><div id="rec-es" class="recording-indicator" style="display:none;margin:4px 8px"><div class="rec-dot"></div>Grabando...</div><textarea class="lang-textarea" id="trad-es" placeholder="Escrib&iacute; en espa&ntilde;ol..."></textarea><div class="translate-loading" id="load-es">Traduciendo...</div></div>
-    <div class="lang-panel"><div class="lang-header"><div class="lang-label">English</div><button class="btn btn-sm" id="btn-mic-en" onclick="toggleMicTrad('en')">Mic</button></div><div id="rec-en" class="recording-indicator" style="display:none;margin:4px 8px"><div class="rec-dot"></div>Recording...</div><textarea class="lang-textarea" id="trad-en" placeholder="Write in English..."></textarea><div class="translate-loading" id="load-en">Translating...</div></div>
-    <div class="lang-panel"><div class="lang-header"><div class="lang-label">Italiano</div><button class="btn btn-sm" id="btn-mic-it" onclick="toggleMicTrad('it')">Mic</button></div><div id="rec-it" class="recording-indicator" style="display:none;margin:4px 8px"><div class="rec-dot"></div>Registrazione...</div><textarea class="lang-textarea" id="trad-it" placeholder="Scrivi in italiano..."></textarea><div class="translate-loading" id="load-it">Traduzione...</div></div>
-    <div class="lang-panel"><div class="lang-header"><div class="lang-label">Francais</div><button class="btn btn-sm" id="btn-mic-fr" onclick="toggleMicTrad('fr')">Mic</button></div><div id="rec-fr" class="recording-indicator" style="display:none;margin:4px 8px"><div class="rec-dot"></div>Enregistrement...</div><textarea class="lang-textarea" id="trad-fr" placeholder="Ecrivez en francais..."></textarea><div class="translate-loading" id="load-fr">Traduction...</div></div>
+    <div class="lang-panel"><div class="lang-header"><div class="lang-label">Espa&ntilde;ol</div><div style="display:flex;gap:4px"><button class="btn btn-sm" id="btn-tts-es" onclick="speakTrad('es')" title="Escuchar">&#128266;</button><button class="btn btn-sm" id="btn-mic-es" onclick="toggleMicTrad('es')">Mic</button></div></div><div id="rec-es" class="recording-indicator" style="display:none;margin:4px 8px"><div class="rec-dot"></div>Grabando...</div><textarea class="lang-textarea" id="trad-es" placeholder="Escrib&iacute; en espa&ntilde;ol..."></textarea><div class="translate-loading" id="load-es">Traduciendo...</div></div>
+    <div class="lang-panel"><div class="lang-header"><div class="lang-label">English</div><div style="display:flex;gap:4px"><button class="btn btn-sm" id="btn-tts-en" onclick="speakTrad('en')" title="Listen">&#128266;</button><button class="btn btn-sm" id="btn-mic-en" onclick="toggleMicTrad('en')">Mic</button></div></div><div id="rec-en" class="recording-indicator" style="display:none;margin:4px 8px"><div class="rec-dot"></div>Recording...</div><textarea class="lang-textarea" id="trad-en" placeholder="Write in English..."></textarea><div class="translate-loading" id="load-en">Translating...</div></div>
+    <div class="lang-panel"><div class="lang-header"><div class="lang-label">Italiano</div><div style="display:flex;gap:4px"><button class="btn btn-sm" id="btn-tts-it" onclick="speakTrad('it')" title="Ascolta">&#128266;</button><button class="btn btn-sm" id="btn-mic-it" onclick="toggleMicTrad('it')">Mic</button></div></div><div id="rec-it" class="recording-indicator" style="display:none;margin:4px 8px"><div class="rec-dot"></div>Registrazione...</div><textarea class="lang-textarea" id="trad-it" placeholder="Scrivi in italiano..."></textarea><div class="translate-loading" id="load-it">Traduzione...</div></div>
+    <div class="lang-panel"><div class="lang-header"><div class="lang-label">Fran&ccedil;ais</div><div style="display:flex;gap:4px"><button class="btn btn-sm" id="btn-tts-fr" onclick="speakTrad('fr')" title="Ecouter">&#128266;</button><button class="btn btn-sm" id="btn-mic-fr" onclick="toggleMicTrad('fr')">Mic</button></div></div><div id="rec-fr" class="recording-indicator" style="display:none;margin:4px 8px"><div class="rec-dot"></div>Enregistrement...</div><textarea class="lang-textarea" id="trad-fr" placeholder="Ecrivez en francais..."></textarea><div class="translate-loading" id="load-fr">Traduction...</div></div>
   </div>
 
   <!-- PERFIL -->
@@ -781,7 +781,7 @@ input[type="file"]{display:none}
     <div class="modal-title" id="modal-vuelo-title">Agregar vuelo <button class="modal-close" onclick="closeModal('modal-vuelo')">X</button></div>
     <label>Ruta</label><input type="text" id="vuelo-ruta" placeholder="Ciudad origen - Ciudad destino">
     <label>Aerol&iacute;nea y n&uacute;mero de vuelo</label><input type="text" id="vuelo-aerolinea" placeholder="Ej: Iberia IB1234">
-    <label>Fecha del vuelo</label><input type="date" id="vuelo-fecha">
+    <input type="hidden" id="vuelo-fecha">
     <label>Salida</label><input type="datetime-local" id="vuelo-salida">
     <label>Llegada</label><input type="datetime-local" id="vuelo-llegada">
     <label>Terminal / Aeropuerto</label><input type="text" id="vuelo-terminal" placeholder="Ej: Barajas T4">
@@ -1556,7 +1556,10 @@ function openModalVuelo(idx){
   document.getElementById('vuelo-edit-idx').value=idx;openModal('modal-vuelo');
 }
 function saveVuelo(){
-  var v={ruta:val('vuelo-ruta'),aerolinea:val('vuelo-aerolinea'),fecha:val('vuelo-fecha'),salida:val('vuelo-salida'),llegada:val('vuelo-llegada'),terminal:val('vuelo-terminal'),notas:val('vuelo-notas')};
+  var salida=val('vuelo-salida');
+  // Derivar fecha automaticamente de la hora de salida (primeros 10 caracteres: YYYY-MM-DD)
+  var fechaDerivada=salida?salida.slice(0,10):'';
+  var v={ruta:val('vuelo-ruta'),aerolinea:val('vuelo-aerolinea'),fecha:fechaDerivada,salida:salida,llegada:val('vuelo-llegada'),terminal:val('vuelo-terminal'),notas:val('vuelo-notas')};
   if(!v.ruta){showToast('Ingresá la ruta');return;}
   var idx=parseInt(document.getElementById('vuelo-edit-idx').value);
   if(idx>=0){v.id=appState.vuelos[idx].id||genId();appState.vuelos[idx]=v;}else{v.id=genId();appState.vuelos.push(v);}
@@ -1906,7 +1909,7 @@ function renderVuelos(){
     var fn=extractFN(v.aerolinea||'');
     var statusHtml='';
     if(fn){var fa='https://www.flightaware.com/live/flight/'+fn;var fr='https://www.flightradar24.com/'+fn;statusHtml='<div class="flight-status">Estado en tiempo real: <span style="display:flex;gap:12px"><a href="'+fa+'" target="_blank">FlightAware</a><a href="'+fr+'" target="_blank">FlightRadar24</a></span></div>';}
-    return '<div class="transport-item"><div class="t-header"><div style="flex:1"><div class="t-name">'+esc(v.ruta)+'</div><div class="t-info">'+esc(v.aerolinea)+(v.fecha?'<br>Fecha: '+v.fecha:'')+(v.salida?'<br>Salida: '+formatDT(v.salida):'')+(v.llegada?' - Llegada: '+formatDT(v.llegada):'')+(v.terminal?'<br>'+esc(v.terminal):'')+(v.notas?'<br>'+esc(v.notas):'')+'</div></div><div class="t-actions"><button class="btn btn-sm btn-edit" onclick="openModalVuelo('+i+')">Editar</button><button class="btn btn-sm btn-danger" onclick="removeItem(\'vuelos\','+i+')">Borrar</button></div></div>'+statusHtml+'</div>';
+    return '<div class="transport-item"><div class="t-header"><div style="flex:1"><div class="t-name">'+esc(v.ruta)+'</div><div class="t-info">'+esc(v.aerolinea)+(v.salida?'<br>Salida: '+formatDT(v.salida):'')+(v.llegada?' &mdash; Llegada: '+formatDT(v.llegada):'')+(v.terminal?'<br>'+esc(v.terminal):'')+(v.notas?'<br>'+esc(v.notas):'')+'</div></div><div class="t-actions"><button class="btn btn-sm btn-edit" onclick="openModalVuelo('+i+')">Editar</button><button class="btn btn-sm btn-danger" onclick="removeItem(\'vuelos\','+i+')">Borrar</button></div></div>'+statusHtml+'</div>';
   }).join('');
 }
 function openModalTerrestre(idx){
@@ -2149,6 +2152,23 @@ function clearAllTrad(){['es','en','it','fr'].forEach(function(l){document.getEl
 var recognition=null,recognitionTarget=null;
 function toggleMic(type){if(!window.SpeechRecognition&&!window.webkitSpeechRecognition){showToast('Dictado no soportado');return;}var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(recognition&&recognitionTarget===type){recognition.stop();return;}if(recognition)recognition.stop();recognition=new SR();recognition.lang='es-AR';recognition.continuous=true;recognition.interimResults=false;recognitionTarget=type;recognition.onstart=function(){document.getElementById('rec-indicator-'+type).style.display='flex';document.getElementById('btn-mic-'+type).textContent='Detener';};recognition.onresult=function(e){var t=Array.from(e.results).map(function(r){return r[0].transcript;}).join(' ');var el=document.getElementById(type+'-text');el.value+=(el.value?' ':'')+t;};recognition.onend=function(){document.getElementById('rec-indicator-'+type).style.display='none';document.getElementById('btn-mic-'+type).textContent='Dictar';recognition=null;recognitionTarget=null;};recognition.start();}
 var micCodes={es:'es-AR',en:'en-US',it:'it-IT',fr:'fr-FR'};var tradRec=null,tradRecLang=null;
+var ttsCodes={es:'es-ES',en:'en-US',it:'it-IT',fr:'fr-FR'};
+
+function speakTrad(lang){
+  if(!window.speechSynthesis){showToast('Tu navegador no soporta la reproducción de audio.');return;}
+  var text=document.getElementById('trad-'+lang).value.trim();
+  if(!text){showToast('No hay texto para reproducir.');return;}
+  // Cancelar cualquier reproduccion en curso
+  window.speechSynthesis.cancel();
+  var btn=document.getElementById('btn-tts-'+lang);
+  var utt=new SpeechSynthesisUtterance(text);
+  utt.lang=ttsCodes[lang]||'es-ES';
+  utt.rate=0.95;
+  utt.onstart=function(){if(btn)btn.style.background='var(--crimson-tint)';};
+  utt.onend=function(){if(btn)btn.style.background='';};
+  utt.onerror=function(){if(btn)btn.style.background='';showToast('Error al reproducir el audio.');};
+  window.speechSynthesis.speak(utt);
+}
 function toggleMicTrad(lang){if(!window.SpeechRecognition&&!window.webkitSpeechRecognition){showToast('Dictado no soportado');return;}var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(tradRec&&tradRecLang===lang){tradRec.stop();return;}if(tradRec)tradRec.stop();tradRec=new SR();tradRec.lang=micCodes[lang];tradRec.continuous=true;tradRec.interimResults=false;tradRecLang=lang;tradRec.onstart=function(){document.getElementById('rec-'+lang).style.display='flex';document.getElementById('btn-mic-'+lang).textContent='Stop';};tradRec.onresult=function(e){var t=Array.from(e.results).map(function(r){return r[0].transcript;}).join(' ');var el=document.getElementById('trad-'+lang);el.value+=(el.value?' ':'')+t;};tradRec.onend=function(){document.getElementById('rec-'+lang).style.display='none';document.getElementById('btn-mic-'+lang).textContent='Mic';tradRec=null;tradRecLang=null;};tradRec.start();}
 
 function switchCronoTab(tab){document.getElementById('crono-tab-manual').classList.toggle('active',tab==='manual');document.getElementById('crono-tab-excel').classList.toggle('active',tab==='excel');document.getElementById('crono-panel-manual').style.display=tab==='manual'?'block':'none';document.getElementById('crono-panel-excel').style.display=tab==='excel'?'block':'none';}
