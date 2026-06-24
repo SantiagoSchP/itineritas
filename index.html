@@ -147,19 +147,15 @@ body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink)
     display:flex;position:fixed;left:0;right:0;bottom:0;z-index:150;
     background:var(--crimson);box-shadow:0 -2px 16px rgba(100,10,10,.25);
     padding-bottom:env(safe-area-inset-bottom,0);
-    overflow-x:auto;scrollbar-width:none;
-    -webkit-overflow-scrolling:touch;
-    touch-action:pan-x;
-    overscroll-behavior-x:contain;
+    overflow:visible;
   }
-  .bottom-nav::-webkit-scrollbar{display:none}
   .bottom-nav-item{
-    flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
     background:transparent;border:none;color:rgba(253,246,233,.65);cursor:pointer;
-    min-height:58px;min-width:68px;padding:6px 4px;font-family:'Inter',sans-serif;
+    min-height:54px;padding:5px 2px;font-family:'Inter',sans-serif;
   }
-  .bottom-nav-item .bn-ico{font-size:1.4rem;line-height:1}
-  .bottom-nav-item .bn-lbl{font-size:0.6667rem;letter-spacing:.02em}
+  .bottom-nav-item .bn-ico{font-size:1.2rem;line-height:1}
+  .bottom-nav-item .bn-lbl{font-size:0.5333rem;letter-spacing:0;white-space:nowrap}
   .bottom-nav-item.active{color:#fdf6e9}
   .bottom-nav-item.active .bn-ico{transform:translateY(-1px)}
   .fab-action{
@@ -201,6 +197,8 @@ body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink)
 .notas-empty{text-align:center;padding:32px 16px;color:var(--ink3);font-size:0.8667rem;font-family:'IM Fell English',serif;font-style:italic}
 .notas-add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;border:1.5px dashed var(--border2);border-radius:10px;background:none;cursor:pointer;color:var(--ink3);font-size:0.8rem;font-family:'Inter',sans-serif;transition:all .15s;margin-bottom:8px}
 .notas-add-btn:hover{border-color:var(--gold2);color:var(--ink2);background:var(--gold-tint)}
+.nota-fmt-btn{font-size:0.7333rem!important;padding:4px 10px!important}
+.nota-fmt-btn.active{background:var(--crimson)!important;color:#fdf6e9!important;border-color:var(--crimson)!important}
 .card-title{font-family:'Cinzel',serif;font-size:0.7333rem;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;display:flex;align-items:center;gap:7px}
 input,textarea,select{width:100%;min-width:0;max-width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:0.55em 12px;font-size:1.0667rem;font-family:'Inter',sans-serif;background:var(--input-bg);color:var(--ink);margin-bottom:8px}
 input[type="date"],input[type="time"],input[type="datetime-local"]{min-width:0;max-width:100%;width:100%}
@@ -899,8 +897,14 @@ input[type="file"]{display:none}
       <button class="nota-color-btn" data-color="postit-lavender" onclick="selectNotaColor('postit-lavender')" style="background:#e8d5ff;width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer" title="Lavanda"></button>
       <button class="nota-color-btn" data-color="postit-peach" onclick="selectNotaColor('postit-peach')" style="background:#ffe5c8;width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer" title="Durazno"></button>
     </div>
-    <label>Contenido <span style="font-size:0.7333rem;color:var(--ink3);font-weight:400">&#8212; Pods usar: <code>- item</code> para vi&ntilde;eta, <code>1. item</code> para lista, <code>[ ] item</code> para tarea</span></label>
-    <textarea id="nota-cuerpo" style="min-height:120px" placeholder="Escrib&iacute; tu nota ac&aacute;...&#10;- Una vi&ntilde;eta&#10;1. Un item numerado&#10;[ ] Una tarea pendiente"></textarea>
+    <label>Contenido</label>
+    <div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap">
+      <button class="btn btn-sm nota-fmt-btn active" data-fmt="text" onclick="setNotaFmt('text',this)" title="Texto normal">T</button>
+      <button class="btn btn-sm nota-fmt-btn" data-fmt="bullet" onclick="setNotaFmt('bullet',this)" title="Vi&ntilde;eta">&#8226; Lista</button>
+      <button class="btn btn-sm nota-fmt-btn" data-fmt="num" onclick="setNotaFmt('num',this)" title="Lista numerada">1. Lista</button>
+      <button class="btn btn-sm nota-fmt-btn" data-fmt="check" onclick="setNotaFmt('check',this)" title="Tarea con casilla">&#9744; Tarea</button>
+    </div>
+    <textarea id="nota-cuerpo" style="min-height:120px" placeholder="Escrib&iacute; tu nota ac&aacute;..." onkeydown="notaCuerpoKeydown(event)"></textarea>
     <input type="hidden" id="nota-edit-idx" value="-1">
     <div class="flex-row" style="margin-top:8px">
       <button class="btn" onclick="closeModal('modal-nota')">Cancelar</button>
@@ -1479,7 +1483,89 @@ function getDuracionViaje(){
 function renderBitacoraDays(){var tabs=document.getElementById('bitacora-day-tabs');tabs.innerHTML='';var totalDias=getDuracionViaje();for(var i=0;i<totalDias;i++){var t=document.createElement('button');t.className='day-tab'+(i===appState.currentDay?' active':'');t.textContent='Dia '+(i+1);(function(idx){t.onclick=function(){selectDay(idx);};})(i);tabs.appendChild(t);}loadDayContent();}
 
 // ===== NOTAS POST-IT =====
-var NOTA_COLORS=['postit-yellow','postit-blue','postit-green','postit-pink','postit-lavender','postit-peach'];
+var notaFmtActual='text';
+
+function setNotaFmt(fmt,btn){
+  notaFmtActual=fmt;
+  document.querySelectorAll('.nota-fmt-btn').forEach(function(b){b.classList.toggle('active',b===btn);});
+  var ta=document.getElementById('nota-cuerpo');
+  ta.focus();
+  // Si la linea actual esta vacia, insertar el prefijo del formato elegido
+  var val=ta.value;
+  var pos=ta.selectionStart;
+  var lineStart=val.lastIndexOf('\n',pos-1)+1;
+  var lineEnd=val.indexOf('\n',pos);if(lineEnd===-1)lineEnd=val.length;
+  var lineText=val.slice(lineStart,lineEnd).trim();
+  if(lineText===''||lineText==='-'||/^\d+\.$/.test(lineText)||lineText==='[ ]'||lineText==='[x]'){
+    var prefix=getNotaPrefix(fmt,val,lineStart);
+    ta.value=val.slice(0,lineStart)+prefix+val.slice(lineEnd);
+    ta.selectionStart=ta.selectionEnd=lineStart+prefix.length;
+  }
+}
+
+function getNotaPrefix(fmt,fullText,lineStart){
+  if(fmt==='text')return '';
+  if(fmt==='bullet')return '- ';
+  if(fmt==='check')return '[ ] ';
+  if(fmt==='num'){
+    // Contar cuantos items numerados hay antes para continuar la secuencia
+    var prev=fullText.slice(0,lineStart);
+    var matches=prev.match(/^\d+\. /mg);
+    var n=matches?matches.length+1:1;
+    return n+'. ';
+  }
+  return '';
+}
+
+// Listener de Enter en el textarea de notas: al presionar Enter,
+// continua automaticamente en el mismo formato de la linea actual
+function notaCuerpoKeydown(e){
+  if(e.key!=='Enter')return;
+  var ta=document.getElementById('nota-cuerpo');
+  var val=ta.value;
+  var pos=ta.selectionStart;
+  var lineStart=val.lastIndexOf('\n',pos-1)+1;
+  var lineText=val.slice(lineStart,pos);
+
+  var nextPrefix='';
+  var bulletM=lineText.match(/^(- )(.*)/);
+  var numM=lineText.match(/^(\d+)\. (.*)/);
+  var checkM=lineText.match(/^(\[\s?\]|\[x\]) (.*)/i);
+
+  if(bulletM){
+    if(bulletM[2].trim()===''){
+      // Linea vacia con prefijo: salir del modo lista
+      e.preventDefault();
+      ta.value=val.slice(0,lineStart)+'\n';
+      ta.selectionStart=ta.selectionEnd=lineStart+1;
+      return;
+    }
+    nextPrefix='- ';
+  } else if(numM){
+    if(numM[2].trim()===''){
+      e.preventDefault();
+      ta.value=val.slice(0,lineStart)+'\n';
+      ta.selectionStart=ta.selectionEnd=lineStart+1;
+      return;
+    }
+    nextPrefix=(parseInt(numM[1])+1)+'. ';
+  } else if(checkM){
+    if(checkM[2].trim()===''){
+      e.preventDefault();
+      ta.value=val.slice(0,lineStart)+'\n';
+      ta.selectionStart=ta.selectionEnd=lineStart+1;
+      return;
+    }
+    nextPrefix='[ ] ';
+  }
+
+  if(nextPrefix){
+    e.preventDefault();
+    var after=val.slice(pos);
+    ta.value=val.slice(0,pos)+'\n'+nextPrefix+after;
+    ta.selectionStart=ta.selectionEnd=pos+1+nextPrefix.length;
+  }
+}
 var notaColorSeleccionado='postit-yellow';
 
 function selectNotaColor(color){
@@ -1586,9 +1672,14 @@ function renderNotas(){
 
 function openNotaModal(idx){
   notaColorSeleccionado='postit-yellow';
+  notaFmtActual='text';
   document.getElementById('nota-titulo').value='';
   document.getElementById('nota-cuerpo').value='';
   document.getElementById('nota-edit-idx').value=idx;
+  // Resetear botones de formato
+  document.querySelectorAll('.nota-fmt-btn').forEach(function(b){
+    b.classList.toggle('active',b.getAttribute('data-fmt')==='text');
+  });
   if(idx>=0&&appState.notas&&appState.notas[idx]){
     var n=appState.notas[idx];
     document.getElementById('nota-titulo').value=n.titulo||'';
