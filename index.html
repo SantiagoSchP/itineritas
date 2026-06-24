@@ -174,6 +174,33 @@ body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink)
 }
 .section{display:none}.section.active{display:block}
 .card{background:var(--card-bg);border-radius:var(--radius);border:0.5px solid var(--border2);padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow);overflow:hidden}
+
+/* ===== NOTAS POST-IT ===== */
+.notas-board{padding:4px 0}
+.postit{border-radius:4px 12px 12px 4px;padding:12px 14px 14px;margin-bottom:14px;box-shadow:0 3px 10px rgba(0,0,0,.13),2px 2px 0 rgba(0,0,0,.07);position:relative;transition:box-shadow .2s}
+.postit:hover{box-shadow:0 6px 18px rgba(0,0,0,.18),2px 2px 0 rgba(0,0,0,.08)}
+.postit-yellow{background:#fff9c4}
+.postit-blue{background:#c8e6ff}
+.postit-green{background:#c8f5d8}
+.postit-pink{background:#ffd6e0}
+.postit-lavender{background:#e8d5ff}
+.postit-peach{background:#ffe5c8}
+.postit-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:8px}
+.postit-title{font-family:'Cinzel',serif;font-size:0.8rem;font-weight:600;color:#2d2416;line-height:1.3;flex:1;word-break:break-word}
+.postit-actions{display:flex;gap:4px;flex-shrink:0;opacity:0;transition:opacity .15s}
+.postit:hover .postit-actions,.postit:focus-within .postit-actions{opacity:1}
+.postit-btn{background:rgba(0,0,0,.1);border:none;border-radius:4px;cursor:pointer;font-size:0.7333rem;padding:3px 7px;color:#2d2416;font-family:'Inter',sans-serif}
+.postit-btn:hover{background:rgba(0,0,0,.18)}
+.postit-body{font-family:'Inter',sans-serif;font-size:0.8rem;color:#3a2e1a;line-height:1.6;word-break:break-word}
+.postit-body ul{margin:2px 0 2px 16px;padding:0}
+.postit-body ol{margin:2px 0 2px 16px;padding:0}
+.postit-body li{margin-bottom:2px}
+.postit-body li.checked{text-decoration:line-through;opacity:.55}
+.postit-check{cursor:pointer;margin-right:5px;accent-color:#8b1a1a;width:13px;height:13px}
+.postit-color-strip{position:absolute;left:0;top:0;bottom:0;width:5px;border-radius:4px 0 0 4px;background:rgba(0,0,0,.12)}
+.notas-empty{text-align:center;padding:32px 16px;color:var(--ink3);font-size:0.8667rem;font-family:'IM Fell English',serif;font-style:italic}
+.notas-add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;border:1.5px dashed var(--border2);border-radius:10px;background:none;cursor:pointer;color:var(--ink3);font-size:0.8rem;font-family:'Inter',sans-serif;transition:all .15s;margin-bottom:8px}
+.notas-add-btn:hover{border-color:var(--gold2);color:var(--ink2);background:var(--gold-tint)}
 .card-title{font-family:'Cinzel',serif;font-size:0.7333rem;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;display:flex;align-items:center;gap:7px}
 input,textarea,select{width:100%;min-width:0;max-width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:0.55em 12px;font-size:1.0667rem;font-family:'Inter',sans-serif;background:var(--input-bg);color:var(--ink);margin-bottom:8px}
 input[type="date"],input[type="time"],input[type="datetime-local"]{min-width:0;max-width:100%;width:100%}
@@ -507,6 +534,7 @@ input[type="file"]{display:none}
       <button class="sub-tab active" onclick="showSubTab('cronica')">Cr&oacute;nica</button>
       <button class="sub-tab" onclick="showSubTab('cosecha')">Cosecha</button>
       <button class="sub-tab" onclick="showSubTab('minuta')">Minuta</button>
+      <button class="sub-tab" onclick="showSubTab('notas')">Notas</button>
     </div>
     <div id="subtab-cronica">
       <div class="card">
@@ -559,9 +587,11 @@ input[type="file"]{display:none}
         </div>
       </div>
     </div>
+    <div id="subtab-notas" style="display:none">
+      <button class="notas-add-btn" onclick="openNotaModal(-1)">&#43; Nueva nota</button>
+      <div class="notas-board" id="notas-board"></div>
+    </div>
   </div>
-
-  <!-- TRANSPORTE -->
   <div class="section main" id="section-transporte">
     <div class="section-title"><span>&#9992;</span> Transporte</div>
     <div class="card">
@@ -854,6 +884,31 @@ input[type="file"]{display:none}
   </div>
 </div>
 
+<!-- MODAL NUEVA NOTA / EDITAR NOTA -->
+<div class="modal-bg" id="modal-nota">
+  <div class="modal">
+    <div class="modal-title" id="modal-nota-title">Nueva nota <button class="modal-close" onclick="closeModal('modal-nota')">X</button></div>
+    <label>T&iacute;tulo</label>
+    <input type="text" id="nota-titulo" placeholder="T&iacute;tulo de la nota..." maxlength="80">
+    <label>Color</label>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap" id="nota-color-picker">
+      <button class="nota-color-btn" data-color="postit-yellow" onclick="selectNotaColor('postit-yellow')" style="background:#fff9c4;width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer" title="Amarillo"></button>
+      <button class="nota-color-btn" data-color="postit-blue" onclick="selectNotaColor('postit-blue')" style="background:#c8e6ff;width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer" title="Celeste"></button>
+      <button class="nota-color-btn" data-color="postit-green" onclick="selectNotaColor('postit-green')" style="background:#c8f5d8;width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer" title="Verde"></button>
+      <button class="nota-color-btn" data-color="postit-pink" onclick="selectNotaColor('postit-pink')" style="background:#ffd6e0;width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer" title="Rosa"></button>
+      <button class="nota-color-btn" data-color="postit-lavender" onclick="selectNotaColor('postit-lavender')" style="background:#e8d5ff;width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer" title="Lavanda"></button>
+      <button class="nota-color-btn" data-color="postit-peach" onclick="selectNotaColor('postit-peach')" style="background:#ffe5c8;width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer" title="Durazno"></button>
+    </div>
+    <label>Contenido <span style="font-size:0.7333rem;color:var(--ink3);font-weight:400">&#8212; Pods usar: <code>- item</code> para vi&ntilde;eta, <code>1. item</code> para lista, <code>[ ] item</code> para tarea</span></label>
+    <textarea id="nota-cuerpo" style="min-height:120px" placeholder="Escrib&iacute; tu nota ac&aacute;...&#10;- Una vi&ntilde;eta&#10;1. Un item numerado&#10;[ ] Una tarea pendiente"></textarea>
+    <input type="hidden" id="nota-edit-idx" value="-1">
+    <div class="flex-row" style="margin-top:8px">
+      <button class="btn" onclick="closeModal('modal-nota')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveNota()">Guardar nota</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL NUEVO VIAJE / RENOMBRAR VIAJE -->
 <div class="modal-bg" id="modal-new-trip">
   <div class="modal">
@@ -899,7 +954,7 @@ function sbH(){return{'Content-Type':'application/json','apikey':SB_KEY,'Authori
 function sbGet(email){return fetch(SB_URL+'/rest/v1/user_data?email=eq.'+encodeURIComponent(email)+'&select=*',{headers:sbH()}).then(function(r){return r.json();}).then(function(rows){return rows[0]||null;});}
 function sbUpsert(email,hash,name,data){return fetch(SB_URL+'/rest/v1/user_data',{method:'POST',headers:Object.assign({},sbH(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify({email:email,password_hash:hash,name:name,data:data,updated_at:new Date().toISOString()})}).then(function(r){if(!r.ok)throw new Error('sb '+r.status);});}
 
-function freshState(){return{currentDay:0,tripStart:new Date().toISOString().slice(0,10),tripEnd:'',days:{},vuelos:[],terrestres:[],gastos:[],intenciones:[],cronograma:[],euroRate:null,euroDate:null,euroSource:null,resumenDiario:null};}
+function freshState(){return{currentDay:0,tripStart:new Date().toISOString().slice(0,10),tripEnd:'',days:{},vuelos:[],terrestres:[],gastos:[],intenciones:[],cronograma:[],notas:[],euroRate:null,euroDate:null,euroSource:null,resumenDiario:null};}
 
 function uid(){return 't_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);}
 
@@ -1303,7 +1358,10 @@ function handleFabClick(){
     document.getElementById('int-texto').scrollIntoView({behavior:'smooth',block:'center'});
     setTimeout(function(){document.getElementById('int-texto').focus();},300);
   }else if(fabSectionActual==='bitacora'){
-    openModal('modal-crono');
+    // Si el sub-tab activo es Notas, el FAB crea una nueva nota
+    var notasTab=document.getElementById('subtab-notas');
+    if(notasTab&&notasTab.style.display!=='none')openNotaModal(-1);
+    else openModal('modal-crono');
   }else if(fabSectionActual==='transporte'){
     openModalVuelo(-1);
   }
@@ -1419,9 +1477,165 @@ function getDuracionViaje(){
 }
 
 function renderBitacoraDays(){var tabs=document.getElementById('bitacora-day-tabs');tabs.innerHTML='';var totalDias=getDuracionViaje();for(var i=0;i<totalDias;i++){var t=document.createElement('button');t.className='day-tab'+(i===appState.currentDay?' active':'');t.textContent='Dia '+(i+1);(function(idx){t.onclick=function(){selectDay(idx);};})(i);tabs.appendChild(t);}loadDayContent();}
+
+// ===== NOTAS POST-IT =====
+var NOTA_COLORS=['postit-yellow','postit-blue','postit-green','postit-pink','postit-lavender','postit-peach'];
+var notaColorSeleccionado='postit-yellow';
+
+function selectNotaColor(color){
+  notaColorSeleccionado=color;
+  document.querySelectorAll('.nota-color-btn').forEach(function(b){
+    b.style.border=b.getAttribute('data-color')===color?'2.5px solid #8b1a1a':'2px solid transparent';
+    b.style.transform=b.getAttribute('data-color')===color?'scale(1.2)':'scale(1)';
+  });
+}
+
+// Parsea el texto de la nota y devuelve HTML renderizado
+function parsearNotaCuerpo(texto){
+  if(!texto)return '';
+  var lineas=texto.split('\n');
+  var html='';
+  var enLista=null; // 'ul', 'ol', 'check', null
+
+  function cerrarLista(){
+    if(enLista){html+='</'+( enLista==='check'?'ul':enLista)+'>';enLista=null;}
+  }
+
+  lineas.forEach(function(linea){
+    var viñeta=linea.match(/^[-*]\s+(.+)/);
+    var numerada=linea.match(/^\d+\.\s+(.+)/);
+    var checkOk=linea.match(/^\[x\]\s*(.*)/i);
+    var checkPend=linea.match(/^\[\s?\]\s*(.*)/);
+
+    if(checkOk||checkPend){
+      if(enLista!=='check'){cerrarLista();html+='<ul style="list-style:none;padding-left:0">';enLista='check';}
+      var checked=!!checkOk;
+      var txt=esc(checked?checkOk[1]:checkPend[1]);
+      html+='<li class="'+(checked?'checked':'')+'" onclick="toggleNotaCheck(this)"><input type="checkbox" class="postit-check"'+(checked?' checked':'')+' onclick="event.stopPropagation()"> '+txt+'</li>';
+    } else if(viñeta){
+      if(enLista!=='ul'){cerrarLista();html+='<ul>';enLista='ul';}
+      html+='<li>'+esc(viñeta[1])+'</li>';
+    } else if(numerada){
+      if(enLista!=='ol'){cerrarLista();html+='<ol>';enLista='ol';}
+      html+='<li>'+esc(numerada[1])+'</li>';
+    } else {
+      cerrarLista();
+      if(linea.trim()==='')html+='<br>';
+      else html+='<p style="margin:2px 0">'+esc(linea)+'</p>';
+    }
+  });
+  cerrarLista();
+  return html;
+}
+
+function toggleNotaCheck(li){
+  // Cuando el usuario toca una linea de checkbox en una nota renderizada,
+  // actualizar el texto fuente en appState y re-renderizar
+  var board=document.getElementById('notas-board');
+  var postit=li.closest('.postit');
+  if(!postit)return;
+  var idx=parseInt(postit.getAttribute('data-nota-idx'));
+  if(isNaN(idx)||!appState.notas||!appState.notas[idx])return;
+  var nota=appState.notas[idx];
+  var lineas=nota.cuerpo.split('\n');
+  var liItems=postit.querySelectorAll('.postit-body li');
+  var liArr=Array.from(liItems);
+  var liIdx=liArr.indexOf(li);
+  // Contar solo las lineas de checkbox en el texto fuente
+  var checkCount=0;
+  for(var i=0;i<lineas.length;i++){
+    if(/^\[x?\s?\]/.test(lineas[i])){
+      if(checkCount===liIdx){
+        // Toggle
+        if(/^\[x\]/i.test(lineas[i]))lineas[i]=lineas[i].replace(/^\[x\]/i,'[ ]');
+        else lineas[i]=lineas[i].replace(/^\[\s?\]/,'[x]');
+        break;
+      }
+      checkCount++;
+    }
+  }
+  nota.cuerpo=lineas.join('\n');
+  saveState();
+  renderNotas();
+}
+
+function renderNotas(){
+  if(!document.getElementById('notas-board'))return;
+  var notas=appState.notas||[];
+  var board=document.getElementById('notas-board');
+  if(notas.length===0){
+    board.innerHTML='<div class="notas-empty">&#128203; A&uacute;n no hay notas.<br>Toc&aacute; &ldquo;+ Nueva nota&rdquo; para crear una.</div>';
+    return;
+  }
+  board.innerHTML=notas.map(function(n,i){
+    var color=n.color||'postit-yellow';
+    var bodyHtml=parsearNotaCuerpo(n.cuerpo);
+    return '<div class="postit '+color+'" data-nota-idx="'+i+'">'+
+      '<div class="postit-color-strip"></div>'+
+      '<div class="postit-header">'+
+        '<div class="postit-title">'+esc(n.titulo||'Sin t&iacute;tulo')+'</div>'+
+        '<div class="postit-actions">'+
+          '<button class="postit-btn" onclick="openNotaModal('+i+')">Editar</button>'+
+          '<button class="postit-btn" onclick="deleteNota('+i+')" style="color:#8b1a1a">Borrar</button>'+
+        '</div>'+
+      '</div>'+
+      '<div class="postit-body">'+bodyHtml+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+function openNotaModal(idx){
+  notaColorSeleccionado='postit-yellow';
+  document.getElementById('nota-titulo').value='';
+  document.getElementById('nota-cuerpo').value='';
+  document.getElementById('nota-edit-idx').value=idx;
+  if(idx>=0&&appState.notas&&appState.notas[idx]){
+    var n=appState.notas[idx];
+    document.getElementById('nota-titulo').value=n.titulo||'';
+    document.getElementById('nota-cuerpo').value=n.cuerpo||'';
+    notaColorSeleccionado=n.color||'postit-yellow';
+    document.getElementById('modal-nota-title').innerHTML='Editar nota <button class="modal-close" onclick="closeModal(\'modal-nota\')">X</button>';
+  }else{
+    document.getElementById('modal-nota-title').innerHTML='Nueva nota <button class="modal-close" onclick="closeModal(\'modal-nota\')">X</button>';
+  }
+  selectNotaColor(notaColorSeleccionado);
+  openModal('modal-nota');
+}
+
+function saveNota(){
+  var titulo=document.getElementById('nota-titulo').value.trim();
+  var cuerpo=document.getElementById('nota-cuerpo').value;
+  if(!titulo&&!cuerpo.trim()){showToast('Escribí algo antes de guardar.');return;}
+  if(!appState.notas)appState.notas=[];
+  var idx=parseInt(document.getElementById('nota-edit-idx').value);
+  var nota={titulo:titulo,cuerpo:cuerpo,color:notaColorSeleccionado,fecha:new Date().toISOString().slice(0,10)};
+  if(idx>=0)appState.notas[idx]=nota;
+  else appState.notas.push(nota);
+  saveState();
+  renderNotas();
+  closeModal('modal-nota');
+  showToast(idx>=0?'Nota actualizada':'Nota guardada');
+}
+
+function deleteNota(idx){
+  if(!confirm('¿Borrar esta nota? No se puede deshacer.'))return;
+  appState.notas.splice(idx,1);
+  saveState();
+  renderNotas();
+  showToast('Nota eliminada');
+}
+
 function selectDay(i){appState.currentDay=i;document.querySelectorAll('.day-tab').forEach(function(t,idx){t.classList.toggle('active',idx===i);});loadDayContent();}
 function loadDayContent(){var key=getDayKey(appState.currentDay);var day=appState.days[key]||{};document.getElementById('cronica-text').value=day.cronica||'';document.getElementById('cosecha-text').value=day.cosecha||'';renderPhotos('cronica',day.photos_cronica||[]);renderPhotos('cosecha',day.photos_cosecha||[]);var m=day.minuta||'';document.getElementById('minuta-result').style.display=m?'block':'none';document.getElementById('minuta-result').textContent=m;document.getElementById('minuta-share-btns').style.display=m?'block':'none';}
-function showSubTab(name){['cronica','cosecha','minuta'].forEach(function(t){document.getElementById('subtab-'+t).style.display=t===name?'block':'none';});document.querySelectorAll('.sub-tab').forEach(function(b,i){b.classList.toggle('active',['cronica','cosecha','minuta'][i]===name);});}
+function showSubTab(name){
+  ['cronica','cosecha','minuta','notas'].forEach(function(t){
+    document.getElementById('subtab-'+t).style.display=t===name?'block':'none';
+  });
+  document.querySelectorAll('.sub-tab').forEach(function(b,i){
+    b.classList.toggle('active',['cronica','cosecha','minuta','notas'][i]===name);
+  });
+  if(name==='notas')renderNotas();
+}
 function saveEntry(type){var key=getDayKey(appState.currentDay);if(!appState.days[key])appState.days[key]={};appState.days[key][type]=document.getElementById(type+'-text').value;saveState();showToast('Guardado');}
 function addPhotos(type,input){var key=getDayKey(appState.currentDay);if(!appState.days[key])appState.days[key]={};if(!appState.days[key]['photos_'+type])appState.days[key]['photos_'+type]=[];Array.from(input.files).forEach(function(file){var r=new FileReader();r.onload=function(e){appState.days[key]['photos_'+type].push(e.target.result);renderPhotos(type,appState.days[key]['photos_'+type]);saveState();};r.readAsDataURL(file);});input.value='';}
 function renderPhotos(type,photos){document.getElementById('photos-'+type).innerHTML=photos.length?photos.map(function(src,i){return '<div class="photo-thumb"><img src="'+src+'" alt=""><button class="rm-photo" onclick="removePhoto(\''+type+'\','+i+')">X</button></div>';}).join(''):'';}
