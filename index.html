@@ -1581,14 +1581,30 @@ function parsearNotaCuerpo(texto){
   if(!texto)return '';
   var lineas=texto.split('\n');
   var html='';
-  var enLista=null; // 'ul', 'ol', 'check', null
+  var enLista=null;
+
+  // Convierte URLs en el texto ya escapado en enlaces clicables.
+  // Detecta http/https, maps.google, geo:, y tambien texto plano tipo "maps.google.com/..."
+  function linkificar(txt){
+    // Primero escapar el texto para evitar XSS
+    var escaped=esc(txt);
+    // Luego convertir URLs en enlaces (sobre el texto ya escapado)
+    return escaped.replace(/(https?:\/\/[^\s<>"]+|geo:[^\s<>"]+|maps\.google\.[^\s<>"]+|www\.[^\s<>"]+)/gi, function(url){
+      var href=url;
+      // Agregar https:// si es www. o maps.google. sin protocolo
+      if(!/^https?:\/\//i.test(href)&&!/^geo:/i.test(href))href='https://'+href;
+      // Texto visible: acortar si es muy largo
+      var label=url.length>45?url.slice(0,42)+'...':url;
+      return '<a href="'+href+'" target="_blank" rel="noopener" style="color:#8b1a1a;text-decoration:underline;word-break:break-all" onclick="event.stopPropagation()">'+label+'</a>';
+    });
+  }
 
   function cerrarLista(){
-    if(enLista){html+='</'+( enLista==='check'?'ul':enLista)+'>';enLista=null;}
+    if(enLista){html+='</'+(enLista==='check'?'ul':enLista)+'>';enLista=null;}
   }
 
   lineas.forEach(function(linea){
-    var viñeta=linea.match(/^[-*]\s+(.+)/);
+    var vineta=linea.match(/^[-*]\s+(.+)/);
     var numerada=linea.match(/^\d+\.\s+(.+)/);
     var checkOk=linea.match(/^\[x\]\s*(.*)/i);
     var checkPend=linea.match(/^\[\s?\]\s*(.*)/);
@@ -1596,18 +1612,18 @@ function parsearNotaCuerpo(texto){
     if(checkOk||checkPend){
       if(enLista!=='check'){cerrarLista();html+='<ul style="list-style:none;padding-left:0">';enLista='check';}
       var checked=!!checkOk;
-      var txt=esc(checked?checkOk[1]:checkPend[1]);
+      var txt=linkificar(checked?checkOk[1]:checkPend[1]);
       html+='<li class="'+(checked?'checked':'')+'" onclick="toggleNotaCheck(this)"><input type="checkbox" class="postit-check"'+(checked?' checked':'')+' onclick="event.stopPropagation()"> '+txt+'</li>';
-    } else if(viñeta){
+    } else if(vineta){
       if(enLista!=='ul'){cerrarLista();html+='<ul>';enLista='ul';}
-      html+='<li>'+esc(viñeta[1])+'</li>';
+      html+='<li>'+linkificar(vineta[1])+'</li>';
     } else if(numerada){
       if(enLista!=='ol'){cerrarLista();html+='<ol>';enLista='ol';}
-      html+='<li>'+esc(numerada[1])+'</li>';
+      html+='<li>'+linkificar(numerada[1])+'</li>';
     } else {
       cerrarLista();
       if(linea.trim()==='')html+='<br>';
-      else html+='<p style="margin:2px 0">'+esc(linea)+'</p>';
+      else html+='<p style="margin:2px 0">'+linkificar(linea)+'</p>';
     }
   });
   cerrarLista();
