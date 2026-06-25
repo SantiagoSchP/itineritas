@@ -199,6 +199,22 @@ body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink)
 .notas-add-btn:hover{border-color:var(--gold2);color:var(--ink2);background:var(--gold-tint)}
 .nota-fmt-btn{font-size:0.7333rem!important;padding:4px 10px!important}
 .nota-fmt-btn.active{background:var(--crimson)!important;color:#fdf6e9!important;border-color:var(--crimson)!important}
+
+/* ===== CAPITAL DEL VIAJE ===== */
+.capital-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border2)}
+.capital-item:last-child{border-bottom:none}
+.capital-nombre{flex:1;font-size:0.8667rem;font-weight:500;color:var(--ink)}
+.capital-moneda-badge{font-size:0.7333rem;font-family:'Cinzel',serif;color:var(--ink3);background:var(--parchment2);border-radius:4px;padding:2px 6px;flex-shrink:0}
+.capital-barra-wrap{flex:2;min-width:80px}
+.capital-barra-bg{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.capital-barra-fill{height:100%;border-radius:4px;transition:width .4s ease;background:var(--crimson)}
+.capital-barra-fill.ok{background:var(--teal)}
+.capital-barra-fill.warn{background:var(--gold)}
+.capital-barra-fill.over{background:var(--crimson2)}
+.capital-nums{font-size:0.7333rem;color:var(--ink3);text-align:right;flex-shrink:0;min-width:90px}
+.capital-total-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0 2px;border-top:1px solid var(--border2);margin-top:4px}
+.capital-total-lbl{font-size:0.8rem;color:var(--ink3);font-family:'Cinzel',serif}
+.capital-total-val{font-size:0.9333rem;font-weight:700;color:var(--crimson)}
 .card-title{font-family:'Cinzel',serif;font-size:0.7333rem;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;display:flex;align-items:center;gap:7px}
 input,textarea,select{width:100%;min-width:0;max-width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:0.55em 12px;font-size:1.0667rem;font-family:'Inter',sans-serif;background:var(--input-bg);color:var(--ink);margin-bottom:8px}
 input[type="date"],input[type="time"],input[type="datetime-local"]{min-width:0;max-width:100%;width:100%}
@@ -502,7 +518,6 @@ input[type="file"]{display:none}
     <p class="home-date" id="home-date"></p>
     <div class="stat-row">
       <div class="stat-card"><div class="stat-num" id="home-day">-</div><div class="stat-lbl">Dia del viaje</div></div>
-      <div class="stat-card"><div class="stat-num" id="home-gastos-total">-</div><div class="stat-lbl">Gastos (EUR)</div></div>
     </div>
     <div id="home-trip-status" style="margin-bottom:1rem"></div>
     <div class="card">
@@ -620,6 +635,15 @@ input[type="file"]{display:none}
       <div class="euro-date" id="euro-date"></div>
       <button class="btn btn-sm" style="margin-top:8px;background:transparent;border-color:rgba(139,26,26,.25);color:var(--crimson)" onclick="fetchEuro(true)">Actualizar</button>
     </div>
+
+    <!-- CAPITAL DEL VIAJE -->
+    <div class="card">
+      <div class="card-title"><span>&#128181;</span> Capital del viaje</div>
+      <p style="font-size:0.8rem;color:var(--ink3);margin-bottom:10px">Carg&aacute; cu&aacute;nto din ero ten&eacute;s disponible por fuente (efectivo, tarjetas). Los gastos se van descontando de cada fuente autom&aacute;ticamente.</p>
+      <div id="capital-list"></div>
+      <button class="btn btn-sm btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="openCapitalModal(-1)">+ Agregar fuente de dinero</button>
+    </div>
+
     <div class="card">
       <div class="card-title"><span>&#128290;</span> Calculadora</div>
       <div class="calc-row">
@@ -634,9 +658,9 @@ input[type="file"]{display:none}
       <label>Categor&iacute;a</label>
       <select id="gasto-cat"><option>Alimentacion</option><option>Alojamiento</option><option>Articulos religiosos</option><option>Comunicaciones</option><option>Entradas / museos</option><option>Indumentaria</option><option>Otros</option><option>Salud</option><option>Souvenirs</option><option>Transporte</option></select>
       <label>Monto</label>
-      <div style="display:flex;gap:8px"><select id="gasto-moneda" style="width:80px;margin-bottom:0"><option value="EUR">EUR</option><option value="ARS">ARS</option></select><input type="number" id="gasto-monto" placeholder="0.00" style="flex:1;margin-bottom:8px"></div>
-      <label>Medio de pago</label>
-      <select id="gasto-medio"><option>Tarjeta credito</option><option>Tarjeta debito</option><option>Efectivo EUR</option><option>Efectivo ARS</option><option>Transferencia</option></select>
+      <div style="display:flex;gap:8px"><select id="gasto-moneda" style="width:80px;margin-bottom:0"><option value="EUR">EUR</option><option value="ARS">ARS</option><option value="USD">USD</option></select><input type="number" id="gasto-monto" placeholder="0.00" style="flex:1;margin-bottom:8px"></div>
+      <label>Fuente de pago <span style="color:var(--crimson);font-size:0.8rem">*obligatorio</span></label>
+      <select id="gasto-fuente"><option value="">— Elegir fuente —</option></select>
       <button class="btn btn-primary" style="width:100%;margin-top:8px;justify-content:center" onclick="addGasto()">+ Agregar gasto</button>
     </div>
     <div class="card">
@@ -882,6 +906,36 @@ input[type="file"]{display:none}
   </div>
 </div>
 
+<!-- MODAL CAPITAL -->
+<div class="modal-bg" id="modal-capital">
+  <div class="modal">
+    <div class="modal-title" id="modal-capital-title">Agregar fuente de dinero <button class="modal-close" onclick="closeModal('modal-capital')">X</button></div>
+    <label>Nombre de la fuente</label>
+    <input type="text" id="capital-nombre" placeholder="Ej: Efectivo EUR, Visa Santander, D&eacute;bito BNA...">
+    <label>Tipo</label>
+    <select id="capital-tipo">
+      <option value="efectivo">Efectivo</option>
+      <option value="tarjeta_credito">Tarjeta de cr&eacute;dito</option>
+      <option value="tarjeta_debito">Tarjeta de d&eacute;bito</option>
+      <option value="transferencia">Transferencia / digital</option>
+      <option value="otro">Otro</option>
+    </select>
+    <label>Moneda</label>
+    <select id="capital-moneda">
+      <option value="EUR">EUR &mdash; Euros</option>
+      <option value="ARS">ARS &mdash; Pesos argentinos</option>
+      <option value="USD">USD &mdash; D&oacute;lares</option>
+    </select>
+    <label>Monto disponible / presupuestado</label>
+    <input type="number" id="capital-monto" placeholder="0.00" min="0" step="0.01">
+    <input type="hidden" id="capital-edit-idx" value="-1">
+    <div class="flex-row" style="margin-top:8px">
+      <button class="btn" onclick="closeModal('modal-capital')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCapital()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL NUEVA NOTA / EDITAR NOTA -->
 <div class="modal-bg" id="modal-nota">
   <div class="modal">
@@ -958,7 +1012,7 @@ function sbH(){return{'Content-Type':'application/json','apikey':SB_KEY,'Authori
 function sbGet(email){return fetch(SB_URL+'/rest/v1/user_data?email=eq.'+encodeURIComponent(email)+'&select=*',{headers:sbH()}).then(function(r){return r.json();}).then(function(rows){return rows[0]||null;});}
 function sbUpsert(email,hash,name,data){return fetch(SB_URL+'/rest/v1/user_data',{method:'POST',headers:Object.assign({},sbH(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify({email:email,password_hash:hash,name:name,data:data,updated_at:new Date().toISOString()})}).then(function(r){if(!r.ok)throw new Error('sb '+r.status);});}
 
-function freshState(){return{currentDay:0,tripStart:new Date().toISOString().slice(0,10),tripEnd:'',days:{},vuelos:[],terrestres:[],gastos:[],intenciones:[],cronograma:[],notas:[],euroRate:null,euroDate:null,euroSource:null,resumenDiario:null};}
+function freshState(){return{currentDay:0,tripStart:new Date().toISOString().slice(0,10),tripEnd:'',days:{},vuelos:[],terrestres:[],gastos:[],intenciones:[],cronograma:[],notas:[],capital:[],euroRate:null,euroDate:null,euroSource:null,resumenDiario:null};}
 
 function uid(){return 't_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);}
 
@@ -1321,6 +1375,7 @@ function showApp(){
   updateTripSwitcherLabel();
   showSection('home');
   renderVuelos();renderTerrestres();renderGastos();renderIntenciones();
+  renderCapital();actualizarSelectorFuente();
   fetchEuro(false);
   loadNotifSchedules();scheduleAllNotifs();
   document.querySelectorAll('.modal-bg').forEach(function(mb){mb.addEventListener('click',function(e){if(e.target===mb)mb.classList.remove('open');});});
@@ -1424,8 +1479,6 @@ function renderHome(){
   document.getElementById('home-date').textContent=now.toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   if(appState.tripStart){var s=new Date(appState.tripStart+'T00:00:00');var d=Math.floor((now-s)/86400000)+1;document.getElementById('home-day').textContent=d>=1?'Dia '+d:'-';}
   renderTripStatus(now);
-  var tE=appState.gastos.filter(function(g){return g.moneda==='EUR';}).reduce(function(a,g){return a+parseFloat(g.monto||0);},0);
-  document.getElementById('home-gastos-total').textContent='EUR '+tE.toFixed(2);
   var td=todayStr();
   var hoy=appState.intenciones.filter(function(i){return !i.fecha||i.fecha===td;});
   document.getElementById('home-intenciones-hoy').innerHTML=hoy.length?hoy.map(function(i){return '<div class="intention-item"><div class="intent-text">'+esc(i.texto)+'</div><div class="intent-author">- '+esc(i.autor)+(i.fecha?' ('+i.fecha+')':'')+'</div></div>';}).join(''):'<div class="empty-state"><span class="eico">&#128591;</span>Sin intenciones para hoy</div>';
@@ -1437,9 +1490,27 @@ function renderHome(){
     return '<div class="crono-item'+pastClass+'"><div class="crono-item-top"><div class="crono-time">'+esc(c.hora)+'</div><div class="crono-desc">'+esc(c.desc)+(c.lugar?'<div class="crono-place">'+esc(c.lugar)+'</div>':'')+'</div></div>'+mapsHtml+'</div>';
   }).join(''):'<div class="empty-state"><span class="eico">&#128197;</span>Sin actividades cargadas</div>';
   var finDiv=document.getElementById('home-fin-resumen');
-  if(!appState.gastos.length){finDiv.innerHTML='<div class="empty-state"><span class="eico">&#128176;</span>Sin gastos registrados</div>';return;}
-  var tA=appState.gastos.filter(function(g){return g.moneda==='ARS';}).reduce(function(a,g){return a+parseFloat(g.monto);},0);
-  finDiv.innerHTML='<div class="stat-row"><div class="stat-card"><div class="stat-num">EUR '+tE.toFixed(0)+'</div><div class="stat-lbl">Total euros</div></div><div class="stat-card"><div class="stat-num">$'+(tA/1000).toFixed(0)+'k</div><div class="stat-lbl">Total pesos</div></div></div>';
+  var cap=appState.capital||[];
+  var tE=appState.gastos.filter(function(g){return g.moneda==='EUR';}).reduce(function(a,g){return a+parseFloat(g.monto||0);},0);
+  var tA=appState.gastos.filter(function(g){return g.moneda==='ARS';}).reduce(function(a,g){return a+parseFloat(g.monto||0);},0);
+  if(!appState.gastos.length&&!cap.length){finDiv.innerHTML='<div class="empty-state"><span class="eico">&#128176;</span>Sin gastos registrados</div>';return;}
+  var totalEurGast=appState.gastos.reduce(function(a,g){return a+eurEquiv(g);},0);
+  var totalCapEur=cap.reduce(function(a,c){
+    if(c.moneda==='EUR')return a+c.monto;
+    if(c.moneda==='ARS')return a+(appState.euroRate?c.monto/appState.euroRate:0);
+    return a;
+  },0);
+  var pct=totalCapEur>0?Math.min(totalEurGast/totalCapEur*100,100):null;
+  var html='<div class="stat-row">'+
+    '<div class="stat-card"><div class="stat-num">EUR '+tE.toFixed(0)+'</div><div class="stat-lbl">Gastado EUR</div></div>'+
+    '<div class="stat-card"><div class="stat-num">$'+(tA/1000).toFixed(0)+'k</div><div class="stat-lbl">Gastado ARS</div></div>'+
+    (totalCapEur>0?'<div class="stat-card"><div class="stat-num" style="color:var(--teal)">EUR '+Math.max(totalCapEur-totalEurGast,0).toFixed(0)+'</div><div class="stat-lbl">Disponible</div></div>':'')+
+  '</div>';
+  if(pct!==null){
+    var pctColor=pct>=90?'var(--crimson)':pct>=70?'var(--gold)':'var(--teal)';
+    html+='<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:0.7333rem;color:var(--ink3);margin-bottom:3px"><span>Presupuesto ejecutado</span><span style="color:'+pctColor+';font-weight:600">'+pct.toFixed(0)+'%</span></div><div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden"><div style="width:'+pct.toFixed(1)+'%;height:100%;background:'+pctColor+';border-radius:3px;transition:width .4s"></div></div></div>';
+  }
+  finDiv.innerHTML=html;
 }
 
 function openCronoFull(){
@@ -2265,23 +2336,172 @@ function fetchEuro(force){
 function saveEuro(r,d,s){appState.euroRate=r;appState.euroDate=d;appState.euroSource=s;saveState();showEuroRate(r,d,s);}
 function showEuroRate(r,d,s){document.getElementById('euro-val').textContent='$ '+parseFloat(r).toLocaleString('es-AR',{maximumFractionDigits:2});document.getElementById('euro-date').textContent=(s?s+' - ':'')+d;}
 function calcConvert(){var a=parseFloat(document.getElementById('calc-amount').value)||0;var f=document.getElementById('calc-from').value;var r=appState.euroRate||0;if(!r){document.getElementById('calc-result').textContent='= (actualizar)';return;}document.getElementById('calc-result').textContent=f==='eur'?'= $ '+(a*r).toLocaleString('es-AR',{maximumFractionDigits:0}):'= EUR '+(a/r).toFixed(2);}
-function addGasto(){var g={desc:val('gasto-desc'),cat:val('gasto-cat'),monto:val('gasto-monto'),moneda:val('gasto-moneda'),medio:val('gasto-medio'),fecha:todayStr()};if(!g.desc||!g.monto){showToast('Completá descripción y monto');return;}appState.gastos.push(g);renderGastos();saveState();document.getElementById('gasto-desc').value='';document.getElementById('gasto-monto').value='';}
+function addGasto(){
+  var fuente=val('gasto-fuente');
+  if(!fuente){showToast('Elegí la fuente de pago.');return;}
+  var g={desc:val('gasto-desc'),cat:val('gasto-cat'),monto:val('gasto-monto'),moneda:val('gasto-moneda'),fuente:fuente,fecha:todayStr()};
+  if(!g.desc||!g.monto){showToast('Completá descripción y monto');return;}
+  appState.gastos.push(g);
+  renderGastos();
+  renderCapital();
+  saveState();
+  document.getElementById('gasto-desc').value='';
+  document.getElementById('gasto-monto').value='';
+}
 function renderGastos(){
   var list=document.getElementById('gastos-list'),summary=document.getElementById('gastos-summary');
-  if(!appState.gastos.length){list.innerHTML='<div class="empty-state"><span class="eico">&#128236;</span>Sin gastos registrados</div>';summary.innerHTML='';document.getElementById('gastos-export-btn').style.display='none';}
-  else{
+  if(!appState.gastos.length){
+    list.innerHTML='<div class="empty-state"><span class="eico">&#128236;</span>Sin gastos registrados</div>';
+    summary.innerHTML='';
+    document.getElementById('gastos-export-btn').style.display='none';
+  }else{
     var tE=appState.gastos.filter(function(g){return g.moneda==='EUR';}).reduce(function(a,g){return a+parseFloat(g.monto);},0);
     var tA=appState.gastos.filter(function(g){return g.moneda==='ARS';}).reduce(function(a,g){return a+parseFloat(g.monto);},0);
-    summary.innerHTML='<div class="stat-row"><div class="stat-card"><div class="stat-num">EUR '+tE.toFixed(2)+'</div><div class="stat-lbl">Total euros</div></div><div class="stat-card"><div class="stat-num">'+(tA/1000).toFixed(1)+'k</div><div class="stat-lbl">Total pesos</div></div></div>';
-    list.innerHTML=appState.gastos.slice().reverse().map(function(g,ri){var i=appState.gastos.length-1-ri;return '<div class="gasto-item"><div class="g-left"><div class="g-cat">'+esc(g.cat)+' - '+g.fecha+'</div><div class="g-desc">'+esc(g.desc)+'</div><div style="font-size:0.7333rem;color:var(--ink3)">'+esc(g.medio)+'</div></div><div style="text-align:right"><div class="g-monto">'+(g.moneda==='EUR'?'EUR':'ARS')+' '+parseFloat(g.monto).toFixed(2)+'</div><button class="btn btn-sm btn-danger" style="margin-top:4px" onclick="removeItem(\'gastos\','+i+')">Borrar</button></div></div>';}).join('');
+    var tU=appState.gastos.filter(function(g){return g.moneda==='USD';}).reduce(function(a,g){return a+parseFloat(g.monto);},0);
+    var resStr='<div class="stat-row"><div class="stat-card"><div class="stat-num">EUR '+tE.toFixed(2)+'</div><div class="stat-lbl">Total euros</div></div><div class="stat-card"><div class="stat-num">$'+(tA/1000).toFixed(1)+'k</div><div class="stat-lbl">Total pesos</div></div>';
+    if(tU>0)resStr+='<div class="stat-card"><div class="stat-num">USD '+tU.toFixed(2)+'</div><div class="stat-lbl">Total d&oacute;lares</div></div>';
+    resStr+='</div>';
+    summary.innerHTML=resStr;
+    list.innerHTML=appState.gastos.slice().reverse().map(function(g,ri){
+      var i=appState.gastos.length-1-ri;
+      var fuenteLabel=g.fuente||g.medio||'';
+      return '<div class="gasto-item"><div class="g-left"><div class="g-cat">'+esc(g.cat)+' - '+g.fecha+'</div><div class="g-desc">'+esc(g.desc)+'</div><div style="font-size:0.7333rem;color:var(--ink3)">'+esc(fuenteLabel)+'</div></div><div style="text-align:right"><div class="g-monto">'+(g.moneda||'EUR')+' '+parseFloat(g.monto).toFixed(2)+'</div><button class="btn btn-sm btn-danger" style="margin-top:4px" onclick="removeItem(\'gastos\','+i+')">Borrar</button></div></div>';
+    }).join('');
     document.getElementById('gastos-export-btn').style.display='block';
   }
+  renderCapital();
   renderDashboard();
 }
 
 var GASTO_CATS=['Alimentacion','Alojamiento','Articulos religiosos','Comunicaciones','Entradas / museos','Indumentaria','Otros','Salud','Souvenirs','Transporte'];
-var GASTO_MEDIOS=['Tarjeta credito','Tarjeta debito','Efectivo EUR','Efectivo ARS','Transferencia'];
 var COLORS=['#8b1a1a','#b8860b','#0f5c52','#d4a017','#3d2f18','#1a8a7a','#b52020','#7a6448','#c8ede9','#f0c040'];
+
+// ===== CAPITAL DEL VIAJE =====
+function openCapitalModal(idx){
+  document.getElementById('capital-nombre').value='';
+  document.getElementById('capital-tipo').value='efectivo';
+  document.getElementById('capital-moneda').value='EUR';
+  document.getElementById('capital-monto').value='';
+  document.getElementById('capital-edit-idx').value=idx;
+  if(idx>=0&&appState.capital&&appState.capital[idx]){
+    var c=appState.capital[idx];
+    document.getElementById('capital-nombre').value=c.nombre||'';
+    document.getElementById('capital-tipo').value=c.tipo||'efectivo';
+    document.getElementById('capital-moneda').value=c.moneda||'EUR';
+    document.getElementById('capital-monto').value=c.monto||'';
+    document.getElementById('modal-capital-title').innerHTML='Editar fuente <button class="modal-close" onclick="closeModal(\'modal-capital\')">X</button>';
+  }else{
+    document.getElementById('modal-capital-title').innerHTML='Agregar fuente de dinero <button class="modal-close" onclick="closeModal(\'modal-capital\')">X</button>';
+  }
+  openModal('modal-capital');
+}
+
+function saveCapital(){
+  var nombre=document.getElementById('capital-nombre').value.trim();
+  var monto=parseFloat(document.getElementById('capital-monto').value)||0;
+  if(!nombre){showToast('Poné un nombre para la fuente.');return;}
+  if(!monto){showToast('Ingresá el monto disponible.');return;}
+  if(!appState.capital)appState.capital=[];
+  var c={nombre:nombre,tipo:val('capital-tipo'),moneda:val('capital-moneda'),monto:monto};
+  var idx=parseInt(document.getElementById('capital-edit-idx').value);
+  if(idx>=0)appState.capital[idx]=c;
+  else appState.capital.push(c);
+  saveState();
+  renderCapital();
+  actualizarSelectorFuente();
+  closeModal('modal-capital');
+  showToast(idx>=0?'Fuente actualizada':'Fuente agregada');
+}
+
+function deleteCapital(idx){
+  if(!confirm('¿Borrar esta fuente de dinero? Los gastos asociados no se van a borrar, pero van a quedar sin fuente asignada.'))return;
+  appState.capital.splice(idx,1);
+  saveState();
+  renderCapital();
+  actualizarSelectorFuente();
+  showToast('Fuente eliminada');
+}
+
+// Calcula cuanto se gastó de una fuente específica
+function gastosDeFuente(nombreFuente){
+  return (appState.gastos||[]).filter(function(g){return g.fuente===nombreFuente;});
+}
+
+function totalGastadoFuente(nombreFuente,monedaFuente){
+  return gastosDeFuente(nombreFuente).reduce(function(a,g){
+    var m=parseFloat(g.monto)||0;
+    // Si la moneda del gasto coincide con la de la fuente, sumar directo
+    if(g.moneda===monedaFuente)return a+m;
+    // Si difieren, convertir via EUR como puente
+    var gEur=eurEquiv(g);
+    if(monedaFuente==='EUR')return a+gEur;
+    if(monedaFuente==='ARS')return a+(appState.euroRate?gEur*appState.euroRate:0);
+    if(monedaFuente==='USD')return a+(appState.euroRate?gEur*(appState.euroRate/1):0);// simplificado
+    return a+m;
+  },0);
+}
+
+function renderCapital(){
+  if(!document.getElementById('capital-list'))return;
+  var cap=appState.capital||[];
+  if(cap.length===0){
+    document.getElementById('capital-list').innerHTML='<div class="empty-state" style="padding:10px 0"><span class="eico">&#128181;</span>Sin fuentes cargadas</div>';
+    return;
+  }
+  var html=cap.map(function(c,i){
+    var gastado=totalGastadoFuente(c.nombre,c.moneda);
+    var pct=c.monto>0?Math.min(gastado/c.monto*100,100):0;
+    var resto=Math.max(c.monto-gastado,0);
+    var fillClass=pct>=100?'over':pct>=80?'warn':'ok';
+    return '<div class="capital-item">'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'+
+          '<span class="capital-nombre">'+esc(c.nombre)+'</span>'+
+          '<span class="capital-moneda-badge">'+c.moneda+'</span>'+
+        '</div>'+
+        '<div class="capital-barra-bg"><div class="capital-barra-fill '+fillClass+'" style="width:'+pct.toFixed(1)+'%"></div></div>'+
+        '<div style="display:flex;justify-content:space-between;font-size:0.7333rem;color:var(--ink3);margin-top:3px">'+
+          '<span>Gastado: '+c.moneda+' '+gastado.toFixed(2)+'</span>'+
+          '<span>Queda: '+c.moneda+' '+resto.toFixed(2)+' / '+c.monto.toFixed(2)+'</span>'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:4px;margin-left:8px;flex-shrink:0">'+
+        '<button class="btn btn-sm btn-edit" onclick="openCapitalModal('+i+')">Editar</button>'+
+        '<button class="btn btn-sm btn-danger" onclick="deleteCapital('+i+')">Borrar</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  // Total general en EUR
+  var totalCapEur=cap.reduce(function(a,c){
+    if(c.moneda==='EUR')return a+c.monto;
+    if(c.moneda==='ARS')return a+(appState.euroRate?c.monto/appState.euroRate:0);
+    return a;
+  },0);
+  var totalGastEur=appState.gastos.reduce(function(a,g){return a+eurEquiv(g);},0);
+  var pctTotal=totalCapEur>0?Math.min(totalGastEur/totalCapEur*100,100):0;
+  html+='<div class="capital-total-row">'+
+    '<span class="capital-total-lbl">Total gastado / disponible</span>'+
+    '<span class="capital-total-val">EUR '+totalGastEur.toFixed(2)+' / '+totalCapEur.toFixed(2)+
+      ' <span style="font-size:0.7333rem;color:var(--ink3)">('+pctTotal.toFixed(0)+'%)</span></span>'+
+  '</div>';
+  document.getElementById('capital-list').innerHTML=html;
+}
+
+// Rellena el <select> de fuente en el formulario de gastos con las fuentes cargadas
+function actualizarSelectorFuente(){
+  var sel=document.getElementById('gasto-fuente');
+  if(!sel)return;
+  var cap=appState.capital||[];
+  var prev=sel.value;
+  sel.innerHTML='<option value="">— Elegir fuente —</option>';
+  cap.forEach(function(c){
+    var opt=document.createElement('option');
+    opt.value=c.nombre;
+    opt.textContent=c.nombre+' ('+c.moneda+')';
+    sel.appendChild(opt);
+  });
+  if(prev)sel.value=prev;
+}
 
 function eurEquiv(g){
   var m=parseFloat(g.monto)||0;
@@ -2309,7 +2529,12 @@ function renderDashboard(){
   if(!c1||!c2)return;
 
   var catData=GASTO_CATS.map(function(cat){return appState.gastos.filter(function(g){return g.cat===cat;}).reduce(function(a,g){return a+eurEquiv(g);},0);});
-  var medioData=GASTO_MEDIOS.map(function(m){return appState.gastos.filter(function(g){return g.medio===m;}).reduce(function(a,g){return a+eurEquiv(g);},0);});
+  // Para el grafico de fuentes, usamos las fuentes reales cargadas por el usuario
+  var cap=appState.capital||[];
+  var fuenteLabels=cap.length?cap.map(function(c){return c.nombre;}):['Sin fuente'];
+  var fuenteData=cap.length?cap.map(function(c){
+    return appState.gastos.filter(function(g){return g.fuente===c.nombre;}).reduce(function(a,g){return a+eurEquiv(g);},0);
+  }):[appState.gastos.reduce(function(a,g){return a+eurEquiv(g);},0)];
 
   if(window._chartCat)window._chartCat.destroy();
   if(window._chartMedio)window._chartMedio.destroy();
@@ -2320,66 +2545,110 @@ function renderDashboard(){
 
   window._chartCat=new Chart(c1.getContext('2d'),{
     type:'bar',
-    data:{labels:GASTO_CATS,datasets:[{label:'EUR',data:catData,backgroundColor:'#b8860b'}]},
+    data:{labels:GASTO_CATS,datasets:[{label:'EUR equiv.',data:catData,backgroundColor:'#b8860b'}]},
     options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},color:colorTexto}},y:{beginAtZero:true,ticks:{color:colorTexto}}}}
   });
   window._chartMedio=new Chart(c2.getContext('2d'),{
     type:'doughnut',
-    data:{labels:GASTO_MEDIOS,datasets:[{data:medioData,backgroundColor:COLORS}]},
+    data:{labels:fuenteLabels,datasets:[{data:fuenteData,backgroundColor:COLORS}]},
     options:{responsive:true,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10},color:colorTexto}}}}
   });
 
   var total=appState.gastos.length;
   var totalEUREquiv=appState.gastos.reduce(function(a,g){return a+eurEquiv(g);},0);
-  var maxCatIdx=0,maxMedioIdx=0;
+  var maxCatIdx=0;
   catData.forEach(function(v,i){if(v>catData[maxCatIdx])maxCatIdx=i;});
-  medioData.forEach(function(v,i){if(v>medioData[maxMedioIdx])maxMedioIdx=i;});
+  var maxFuenteIdx=0;
+  fuenteData.forEach(function(v,i){if(v>fuenteData[maxFuenteIdx])maxFuenteIdx=i;});
 
-  var html='<div class="stat-row" style="margin-top:4px"><div class="stat-card"><div class="stat-num">'+total+'</div><div class="stat-lbl">Gastos registrados</div></div><div class="stat-card"><div class="stat-num">EUR '+totalEUREquiv.toFixed(2)+'</div><div class="stat-lbl">Total equiv. EUR</div></div></div>';
-  if(total>0&&catData[maxCatIdx]>0){html+='<p style="font-size:0.8667rem;margin-top:6px">Categoria con mas gasto: <strong>'+esc(GASTO_CATS[maxCatIdx])+'</strong> (EUR '+catData[maxCatIdx].toFixed(2)+')</p>';}
-  if(total>0&&medioData[maxMedioIdx]>0){html+='<p style="font-size:0.8667rem">Medio de pago mas usado: <strong>'+esc(GASTO_MEDIOS[maxMedioIdx])+'</strong> (EUR '+medioData[maxMedioIdx].toFixed(2)+')</p>';}
-  if(!appState.euroRate&&appState.gastos.some(function(g){return g.moneda==='ARS';})){
-    html+='<p style="font-size:0.8rem;font-style:italic;margin-top:6px;color:var(--ink3)">Nota: para incluir los gastos en pesos en estos graficos en su equivalente en euros, actualiza la cotizacion del euro en la parte superior.</p>';
+  // Capital total disponible para calcular % de ejecucion
+  var totalCapEur=(appState.capital||[]).reduce(function(a,c){
+    if(c.moneda==='EUR')return a+c.monto;
+    if(c.moneda==='ARS')return a+(appState.euroRate?c.monto/appState.euroRate:0);
+    return a;
+  },0);
+  var pctEjecucion=totalCapEur>0?(totalEUREquiv/totalCapEur*100).toFixed(0):null;
+
+  var html='<div class="stat-row" style="margin-top:4px">'+
+    '<div class="stat-card"><div class="stat-num">'+total+'</div><div class="stat-lbl">Gastos registrados</div></div>'+
+    '<div class="stat-card"><div class="stat-num">EUR '+totalEUREquiv.toFixed(2)+'</div><div class="stat-lbl">Total equiv. EUR</div></div>'+
+    (pctEjecucion!==null?'<div class="stat-card"><div class="stat-num">'+pctEjecucion+'%</div><div class="stat-lbl">Del presupuesto</div></div>':'')+
+  '</div>';
+  if(total>0&&catData[maxCatIdx]>0){html+='<p style="font-size:0.8667rem;margin-top:6px">Categor&iacute;a con m&aacute;s gasto: <strong>'+esc(GASTO_CATS[maxCatIdx])+'</strong> (EUR '+catData[maxCatIdx].toFixed(2)+')</p>';}
+  if(total>0&&fuenteData[maxFuenteIdx]>0){html+='<p style="font-size:0.8667rem">Fuente m&aacute;s usada: <strong>'+esc(fuenteLabels[maxFuenteIdx])+'</strong> (EUR '+fuenteData[maxFuenteIdx].toFixed(2)+')</p>';}
+  if(!appState.euroRate&&appState.gastos.some(function(g){return g.moneda==='ARS'||g.moneda==='USD';})){
+    html+='<p style="font-size:0.8rem;font-style:italic;margin-top:6px;color:var(--ink3)">Nota: para incluir los gastos en otras monedas en su equivalente en euros, actualizá la cotización del euro.</p>';
   }
   document.getElementById('dash-stats').innerHTML=html;
 }
 
 function exportGastosExcel(){
   var wb=XLSX.utils.book_new();
-  var det=[['Fecha','Descripcion','Categoria','Moneda','Monto','Medio de pago']];
-  appState.gastos.forEach(function(g){det.push([g.fecha,g.desc,g.cat,g.moneda,parseFloat(g.monto),g.medio]);});
-  var ws1=XLSX.utils.aoa_to_sheet(det);ws1['!cols']=[{wch:12},{wch:30},{wch:20},{wch:8},{wch:12},{wch:18}];
+
+  // Hoja 1: Detalle de gastos (con columna Fuente)
+  var det=[['Fecha','Descripcion','Categoria','Moneda','Monto','Fuente de pago']];
+  appState.gastos.forEach(function(g){
+    det.push([g.fecha,g.desc,g.cat,g.moneda,parseFloat(g.monto),g.fuente||g.medio||'']);
+  });
+  var ws1=XLSX.utils.aoa_to_sheet(det);
+  ws1['!cols']=[{wch:12},{wch:30},{wch:20},{wch:8},{wch:12},{wch:22}];
   XLSX.utils.book_append_sheet(wb,ws1,'Detalle de gastos');
+
+  // Hoja 2: Capital del viaje
+  var cap=appState.capital||[];
+  var capSheet=[['CAPITAL DEL VIAJE'],[''],
+    ['Fuente','Tipo','Moneda','Monto disponible','Total gastado','Saldo restante','% utilizado']];
+  cap.forEach(function(c){
+    var gastado=totalGastadoFuente(c.nombre,c.moneda);
+    var resto=Math.max(c.monto-gastado,0);
+    var pct=c.monto>0?(gastado/c.monto*100).toFixed(1)+'%':'--';
+    capSheet.push([c.nombre,c.tipo,c.moneda,c.monto,parseFloat(gastado.toFixed(2)),parseFloat(resto.toFixed(2)),pct]);
+  });
+  capSheet.push([]);
+  // Totales en EUR
+  var totalCapEur=cap.reduce(function(a,c){
+    if(c.moneda==='EUR')return a+c.monto;
+    if(c.moneda==='ARS')return a+(appState.euroRate?c.monto/appState.euroRate:0);
+    return a;
+  },0);
+  var totalGastEur=appState.gastos.reduce(function(a,g){return a+eurEquiv(g);},0);
+  var saldoEur=Math.max(totalCapEur-totalGastEur,0);
+  capSheet.push(['TOTAL (equiv. EUR)','','','',parseFloat(totalCapEur.toFixed(2)),parseFloat(totalGastEur.toFixed(2)),parseFloat(saldoEur.toFixed(2))]);
+  if(appState.euroRate)capSheet.push(['Cotizacion EUR/ARS usada',appState.euroRate]);
+  var ws3=XLSX.utils.aoa_to_sheet(capSheet);
+  ws3['!cols']=[{wch:24},{wch:18},{wch:8},{wch:18},{wch:16},{wch:16},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws3,'Capital del viaje');
+
+  // Hoja 3: Resumen y totales
   var tE=appState.gastos.filter(function(g){return g.moneda==='EUR';}).reduce(function(a,g){return a+parseFloat(g.monto);},0);
   var tA=appState.gastos.filter(function(g){return g.moneda==='ARS';}).reduce(function(a,g){return a+parseFloat(g.monto);},0);
-  var tot=[['RESUMEN - RUTA CALASANZ'],[''],['TOTALES GENERALES'],['Total EUR',tE],['Total ARS',tA],[''],['POR CATEGORIA - EUR']];
-  var cats=['Alimentacion','Transporte','Alojamiento','Entradas / museos','Comunicaciones','Salud','Indumentaria','Articulos religiosos','Souvenirs','Otros'];
-  cats.forEach(function(c){var t=appState.gastos.filter(function(g){return g.cat===c&&g.moneda==='EUR';}).reduce(function(a,g){return a+parseFloat(g.monto);},0);if(t>0)tot.push([c,t]);});
-  tot.push([''],['POR CATEGORIA - ARS']);
-  cats.forEach(function(c){var t=appState.gastos.filter(function(g){return g.cat===c&&g.moneda==='ARS';}).reduce(function(a,g){return a+parseFloat(g.monto);},0);if(t>0)tot.push([c,t]);});
-  tot.push([''],['POR MEDIO DE PAGO - EUR']);
-  ['Tarjeta credito','Tarjeta debito','Efectivo EUR','Efectivo ARS','Transferencia'].forEach(function(m){var t=appState.gastos.filter(function(g){return g.medio===m&&g.moneda==='EUR';}).reduce(function(a,g){return a+parseFloat(g.monto);},0);if(t>0)tot.push([m,t]);});
-  tot.push([''],['POR MEDIO DE PAGO - ARS']);
-  ['Tarjeta credito','Tarjeta debito','Efectivo EUR','Efectivo ARS','Transferencia'].forEach(function(m){var t=appState.gastos.filter(function(g){return g.medio===m&&g.moneda==='ARS';}).reduce(function(a,g){return a+parseFloat(g.monto);},0);if(t>0)tot.push([m,t]);});
-
-  tot.push([''],['PANEL DE GASTOS']);
-  tot.push(['Cantidad total de gastos',appState.gastos.length]);
-  var totalEUREquiv=appState.gastos.reduce(function(a,g){return a+eurEquiv(g);},0);
-  tot.push(['Total equivalente en EUR',totalEUREquiv]);
-  if(appState.euroRate)tot.push(['Cotizacion EUR/ARS usada',appState.euroRate]);
-  tot.push([''],['GASTOS POR CATEGORIA (equiv. EUR)']);
-  cats.forEach(function(c){
+  var tU=appState.gastos.filter(function(g){return g.moneda==='USD';}).reduce(function(a,g){return a+parseFloat(g.monto);},0);
+  var tot=[['RESUMEN - ITINERITAS'],[''],
+    ['TOTALES GENERALES'],
+    ['Total EUR',tE],['Total ARS',tA]];
+  if(tU>0)tot.push(['Total USD',tU]);
+  tot.push(['Total equiv. EUR',totalGastEur]);
+  tot.push([]);
+  tot.push(['POR FUENTE DE PAGO (equiv. EUR)']);
+  cap.forEach(function(c){
+    var gastado=appState.gastos.filter(function(g){return g.fuente===c.nombre;}).reduce(function(a,g){return a+eurEquiv(g);},0);
+    if(gastado>0)tot.push([c.nombre,parseFloat(gastado.toFixed(2))]);
+  });
+  // Gastos sin fuente asignada (datos viejos)
+  var sinFuente=appState.gastos.filter(function(g){return !g.fuente&&!g.medio;}).reduce(function(a,g){return a+eurEquiv(g);},0);
+  if(sinFuente>0)tot.push(['Sin fuente asignada',parseFloat(sinFuente.toFixed(2))]);
+  tot.push([]);
+  tot.push(['POR CATEGORIA (equiv. EUR)']);
+  GASTO_CATS.forEach(function(c){
     var t=appState.gastos.filter(function(g){return g.cat===c;}).reduce(function(a,g){return a+eurEquiv(g);},0);
-    if(t>0)tot.push([c,t]);
+    if(t>0)tot.push([c,parseFloat(t.toFixed(2))]);
   });
-  tot.push([''],['GASTOS POR MEDIO DE PAGO (equiv. EUR)']);
-  ['Tarjeta credito','Tarjeta debito','Efectivo EUR','Efectivo ARS','Transferencia'].forEach(function(m){
-    var t=appState.gastos.filter(function(g){return g.medio===m;}).reduce(function(a,g){return a+eurEquiv(g);},0);
-    if(t>0)tot.push([m,t]);
-  });
-  var ws2=XLSX.utils.aoa_to_sheet(tot);ws2['!cols']=[{wch:30},{wch:16}];
+  var ws2=XLSX.utils.aoa_to_sheet(tot);
+  ws2['!cols']=[{wch:30},{wch:16}];
   XLSX.utils.book_append_sheet(wb,ws2,'Resumen y totales');
-  XLSX.writeFile(wb,'gastos_ruta_calasanz.xlsx');showToast('Excel descargado');
+
+  XLSX.writeFile(wb,'gastos_itineritas.xlsx');
+  showToast('Excel descargado');
 }
 
 function addIntencion(){var i={texto:val('int-texto'),autor:val('int-autor')||'Anonimo',fecha:val('int-fecha')||null};if(!i.texto){showToast('Ingresá la intención');return;}appState.intenciones.push(i);sortIntenciones();renderIntenciones();saveState();document.getElementById('int-texto').value='';document.getElementById('int-autor').value='';document.getElementById('int-fecha').value='';}
@@ -2752,6 +3021,7 @@ function selectTrip(id){
   updateTripSwitcherLabel();
   showSection('home');
   renderVuelos();renderTerrestres();renderGastos();renderIntenciones();
+  renderCapital();actualizarSelectorFuente();
   loadNotifSchedules();scheduleAllNotifs();
   showToast('Viaje activo: '+(appState.nombre||''));
 }
