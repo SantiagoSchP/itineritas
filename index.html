@@ -193,6 +193,9 @@ body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink)
 .postit-body li{margin-bottom:2px}
 .postit-body li.checked{text-decoration:line-through;opacity:.55}
 .postit-check{cursor:pointer;margin-right:5px;accent-color:#8b1a1a;width:13px;height:13px}
+.postit-drag-handle{font-size:0.8rem;color:rgba(0,0,0,.25);cursor:grab;padding:0 6px 0 0;flex-shrink:0;line-height:1;user-select:none;-webkit-user-select:none}
+.postit-drag-handle:active{cursor:grabbing}
+.postit.drag-over{outline:2px dashed #8b1a1a;outline-offset:2px;transform:scale(1.01)}
 .postit-color-strip{position:absolute;left:0;top:0;bottom:0;width:5px;border-radius:4px 0 0 4px;background:rgba(0,0,0,.12)}
 .notas-empty{text-align:center;padding:32px 16px;color:var(--ink3);font-size:0.8667rem;font-family:'IM Fell English',serif;font-style:italic}
 .notas-add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;border:1.5px dashed var(--border2);border-radius:10px;background:none;cursor:pointer;color:var(--ink3);font-size:0.8rem;font-family:'Inter',sans-serif;transition:all .15s;margin-bottom:8px}
@@ -544,16 +547,20 @@ input[type="file"]{display:none}
     <div class="section-title"><span>&#128218;</span> Bit&aacute;cora</div>
     <div class="day-tabs" id="bitacora-day-tabs"></div>
     <div class="sub-tabs">
-      <button class="sub-tab active" onclick="showSubTab('cronica')">Cr&oacute;nica</button>
+      <button class="sub-tab active" onclick="showSubTab('notas')">Notas</button>
+      <button class="sub-tab" onclick="showSubTab('cronica')">Cr&oacute;nica</button>
       <button class="sub-tab" onclick="showSubTab('cosecha')">Cosecha</button>
       <button class="sub-tab" onclick="showSubTab('minuta')">Minuta</button>
-      <button class="sub-tab" onclick="showSubTab('notas')">Notas</button>
     </div>
-    <div id="subtab-cronica">
+    <div id="subtab-notas">
+      <button class="notas-add-btn" onclick="openNotaModal(-1)">&#43; Nueva nota</button>
+      <div class="notas-board" id="notas-board"></div>
+    </div>
+    <div id="subtab-cronica" style="display:none">
       <div class="card">
         <div class="card-title"><span>&#9997;</span> Cr&oacute;nica del d&iacute;a</div>
         <div id="rec-indicator-cronica" class="recording-indicator" style="display:none"><div class="rec-dot"></div>Grabando...</div>
-        <textarea id="cronica-text" placeholder="Escrib&iacute; aqu&iacute; la cr&oacute;nica del d&iacute;a..." style="min-height:140px"></textarea>
+        <textarea id="cronica-text" placeholder="Escrib&iacute; aqu&iacute; la cr&oacute;nica del d&iacute;a..." style="min-height:45vh;resize:vertical"></textarea>
         <div class="flex-row" style="margin-bottom:8px">
           <button class="btn btn-sm" id="btn-mic-cronica" onclick="toggleMic('cronica')">Dictar</button>
           <button class="btn btn-sm btn-primary" onclick="saveEntry('cronica')">Guardar</button>
@@ -567,7 +574,7 @@ input[type="file"]{display:none}
       <div class="card">
         <div class="card-title"><span>&#127807;</span> Cosecha personal</div>
         <div id="rec-indicator-cosecha" class="recording-indicator" style="display:none"><div class="rec-dot"></div>Grabando...</div>
-        <textarea id="cosecha-text" placeholder="Qu&eacute; te llev&aacute;s de este d&iacute;a?" style="min-height:140px"></textarea>
+        <textarea id="cosecha-text" placeholder="Qu&eacute; te llev&aacute;s de este d&iacute;a?" style="min-height:45vh;resize:vertical"></textarea>
         <div class="flex-row" style="margin-bottom:8px">
           <button class="btn btn-sm" id="btn-mic-cosecha" onclick="toggleMic('cosecha')">Dictar</button>
           <button class="btn btn-sm btn-primary" onclick="saveEntry('cosecha')">Guardar</button>
@@ -600,10 +607,6 @@ input[type="file"]{display:none}
         </div>
       </div>
     </div>
-    <div id="subtab-notas" style="display:none">
-      <button class="notas-add-btn" onclick="openNotaModal(-1)">&#43; Nueva nota</button>
-      <div class="notas-board" id="notas-board"></div>
-    </div>
   </div>
   <div class="section main" id="section-transporte">
     <div class="section-title"><span>&#9992;</span> Transporte</div>
@@ -635,6 +638,14 @@ input[type="file"]{display:none}
       <div class="euro-date" id="euro-date"></div>
       <button class="btn btn-sm" style="margin-top:8px;background:transparent;border-color:rgba(139,26,26,.25);color:var(--crimson)" onclick="fetchEuro(true)">Actualizar</button>
     </div>
+    <div class="card">
+      <div class="card-title"><span>&#128290;</span> Calculadora</div>
+      <div class="calc-row">
+        <select id="calc-from" style="width:90px;margin-bottom:0" onchange="calcConvert()"><option value="eur">EUR</option><option value="ars">ARS</option></select>
+        <input type="number" id="calc-amount" placeholder="0.00" style="flex:1;margin-bottom:0" oninput="calcConvert()">
+        <div class="calc-result" id="calc-result">= -</div>
+      </div>
+    </div>
 
     <!-- CAPITAL DEL VIAJE -->
     <div class="card">
@@ -644,14 +655,6 @@ input[type="file"]{display:none}
       <button class="btn btn-sm btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="openCapitalModal(-1)">+ Agregar fuente de dinero</button>
     </div>
 
-    <div class="card">
-      <div class="card-title"><span>&#128290;</span> Calculadora</div>
-      <div class="calc-row">
-        <select id="calc-from" style="width:90px;margin-bottom:0" onchange="calcConvert()"><option value="eur">EUR</option><option value="ars">ARS</option></select>
-        <input type="number" id="calc-amount" placeholder="0.00" style="flex:1;margin-bottom:0" oninput="calcConvert()">
-        <div class="calc-result" id="calc-result">= -</div>
-      </div>
-    </div>
     <div class="card">
       <div class="card-title"><span>&#128236;</span> Registrar gasto</div>
       <label>Descripcion</label><input type="text" id="gasto-desc" placeholder="Ej: Almuerzo en Roma">
@@ -958,7 +961,7 @@ input[type="file"]{display:none}
       <button class="btn btn-sm nota-fmt-btn" data-fmt="num" onclick="setNotaFmt('num',this)" title="Lista numerada">1. Lista</button>
       <button class="btn btn-sm nota-fmt-btn" data-fmt="check" onclick="setNotaFmt('check',this)" title="Tarea con casilla">&#9744; Tarea</button>
     </div>
-    <textarea id="nota-cuerpo" style="min-height:120px" placeholder="Escrib&iacute; tu nota ac&aacute;..." onkeydown="notaCuerpoKeydown(event)"></textarea>
+    <textarea id="nota-cuerpo" style="min-height:40vh;resize:vertical" placeholder="Escrib&iacute; tu nota ac&aacute;..." onkeydown="notaCuerpoKeydown(event)"></textarea>
     <input type="hidden" id="nota-edit-idx" value="-1">
     <div class="flex-row" style="margin-top:8px">
       <button class="btn" onclick="closeModal('modal-nota')">Cancelar</button>
@@ -1012,7 +1015,7 @@ function sbH(){return{'Content-Type':'application/json','apikey':SB_KEY,'Authori
 function sbGet(email){return fetch(SB_URL+'/rest/v1/user_data?email=eq.'+encodeURIComponent(email)+'&select=*',{headers:sbH()}).then(function(r){return r.json();}).then(function(rows){return rows[0]||null;});}
 function sbUpsert(email,hash,name,data){return fetch(SB_URL+'/rest/v1/user_data',{method:'POST',headers:Object.assign({},sbH(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify({email:email,password_hash:hash,name:name,data:data,updated_at:new Date().toISOString()})}).then(function(r){if(!r.ok)throw new Error('sb '+r.status);});}
 
-function freshState(){return{currentDay:0,tripStart:new Date().toISOString().slice(0,10),tripEnd:'',days:{},vuelos:[],terrestres:[],gastos:[],intenciones:[],cronograma:[],notas:[],capital:[],euroRate:null,euroDate:null,euroSource:null,resumenDiario:null};}
+function freshState(){return{currentDay:0,tripStart:new Date().toISOString().slice(0,10),tripEnd:'',days:{},vuelos:[],terrestres:[],gastos:[],intenciones:[],cronograma:[],notas:[],capital:[],euroRate:null,euroDate:null,euroSource:null,usdRate:null,resumenDiario:null};}
 
 function uid(){return 't_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);}
 
@@ -1498,6 +1501,7 @@ function renderHome(){
   var totalCapEur=cap.reduce(function(a,c){
     if(c.moneda==='EUR')return a+c.monto;
     if(c.moneda==='ARS')return a+(appState.euroRate?c.monto/appState.euroRate:0);
+    if(c.moneda==='USD')return a+(appState.usdRate?c.monto/appState.usdRate:c.monto/1.08);
     return a;
   },0);
   var pct=totalCapEur>0?Math.min(totalEurGast/totalCapEur*100,100):null;
@@ -1743,9 +1747,10 @@ function renderNotas(){
   board.innerHTML=notas.map(function(n,i){
     var color=n.color||'postit-yellow';
     var bodyHtml=parsearNotaCuerpo(n.cuerpo);
-    return '<div class="postit '+color+'" data-nota-idx="'+i+'">'+
+    return '<div class="postit '+color+'" data-nota-idx="'+i+'" draggable="true">'+
       '<div class="postit-color-strip"></div>'+
       '<div class="postit-header">'+
+        '<div class="postit-drag-handle" title="Arrastr&aacute; para reordenar">&#8942;&#8942;</div>'+
         '<div class="postit-title">'+esc(n.titulo||'Sin t&iacute;tulo')+'</div>'+
         '<div class="postit-actions">'+
           '<button class="postit-btn" onclick="openNotaModal('+i+')">Editar</button>'+
@@ -1755,6 +1760,90 @@ function renderNotas(){
       '<div class="postit-body">'+bodyHtml+'</div>'+
     '</div>';
   }).join('');
+
+  // Activar drag & drop en los post-its
+  var items=board.querySelectorAll('.postit');
+  var dragIdx=null;
+  items.forEach(function(el){
+    el.addEventListener('dragstart',function(e){
+      dragIdx=parseInt(el.getAttribute('data-nota-idx'));
+      el.style.opacity='0.5';
+      e.dataTransfer.effectAllowed='move';
+    });
+    el.addEventListener('dragend',function(){
+      el.style.opacity='';
+      board.querySelectorAll('.postit').forEach(function(p){p.classList.remove('drag-over');});
+    });
+    el.addEventListener('dragover',function(e){
+      e.preventDefault();
+      e.dataTransfer.dropEffect='move';
+      board.querySelectorAll('.postit').forEach(function(p){p.classList.remove('drag-over');});
+      el.classList.add('drag-over');
+    });
+    el.addEventListener('drop',function(e){
+      e.preventDefault();
+      var dropIdx=parseInt(el.getAttribute('data-nota-idx'));
+      if(dragIdx===null||dragIdx===dropIdx)return;
+      var notas=appState.notas;
+      var moved=notas.splice(dragIdx,1)[0];
+      notas.splice(dropIdx,0,moved);
+      dragIdx=null;
+      saveState();
+      renderNotas();
+    });
+  });
+
+  // Touch drag para mobile (long press + drag)
+  var touchDragIdx=null,touchClone=null,touchStartY=0;
+  items.forEach(function(el){
+    var longPressTimer=null;
+    el.addEventListener('touchstart',function(e){
+      longPressTimer=setTimeout(function(){
+        touchDragIdx=parseInt(el.getAttribute('data-nota-idx'));
+        // Crear clon visual
+        touchClone=el.cloneNode(true);
+        touchClone.style.cssText='position:fixed;opacity:.8;pointer-events:none;z-index:9999;width:'+el.offsetWidth+'px;top:'+el.getBoundingClientRect().top+'px;left:'+el.getBoundingClientRect().left+'px;box-shadow:0 12px 32px rgba(0,0,0,.3);';
+        document.body.appendChild(touchClone);
+        el.style.opacity='0.3';
+        if(window.navigator.vibrate)window.navigator.vibrate(40);
+        touchStartY=e.touches[0].clientY-el.getBoundingClientRect().top;
+      },500);
+    },false);
+    el.addEventListener('touchmove',function(e){
+      clearTimeout(longPressTimer);
+      if(touchDragIdx===null||!touchClone)return;
+      e.preventDefault();
+      var ty=e.touches[0].clientY-touchStartY;
+      touchClone.style.top=ty+'px';
+      // Detectar sobre qué nota está
+      var allItems=board.querySelectorAll('.postit');
+      allItems.forEach(function(p){p.classList.remove('drag-over');});
+      var cx=e.touches[0].clientX,cy=e.touches[0].clientY;
+      allItems.forEach(function(p){
+        var r=p.getBoundingClientRect();
+        if(cx>=r.left&&cx<=r.right&&cy>=r.top&&cy<=r.bottom&&p!==el)p.classList.add('drag-over');
+      });
+    },{passive:false});
+    function touchEnd(e){
+      clearTimeout(longPressTimer);
+      if(touchDragIdx===null||!touchClone)return;
+      if(touchClone)touchClone.remove();touchClone=null;
+      el.style.opacity='';
+      var overEl=board.querySelector('.postit.drag-over');
+      if(overEl){
+        var dropIdx=parseInt(overEl.getAttribute('data-nota-idx'));
+        if(touchDragIdx!==dropIdx){
+          var moved=appState.notas.splice(touchDragIdx,1)[0];
+          appState.notas.splice(dropIdx,0,moved);
+          saveState();
+          renderNotas();
+        }
+      }else{board.querySelectorAll('.postit').forEach(function(p){p.classList.remove('drag-over');});}
+      touchDragIdx=null;
+    }
+    el.addEventListener('touchend',touchEnd,false);
+    el.addEventListener('touchcancel',touchEnd,false);
+  });
 }
 
 function openNotaModal(idx){
@@ -1806,11 +1895,11 @@ function deleteNota(idx){
 function selectDay(i){appState.currentDay=i;document.querySelectorAll('.day-tab').forEach(function(t,idx){t.classList.toggle('active',idx===i);});loadDayContent();}
 function loadDayContent(){var key=getDayKey(appState.currentDay);var day=appState.days[key]||{};document.getElementById('cronica-text').value=day.cronica||'';document.getElementById('cosecha-text').value=day.cosecha||'';renderPhotos('cronica',day.photos_cronica||[]);renderPhotos('cosecha',day.photos_cosecha||[]);var m=day.minuta||'';document.getElementById('minuta-result').style.display=m?'block':'none';document.getElementById('minuta-result').textContent=m;document.getElementById('minuta-share-btns').style.display=m?'block':'none';}
 function showSubTab(name){
-  ['cronica','cosecha','minuta','notas'].forEach(function(t){
+  ['notas','cronica','cosecha','minuta'].forEach(function(t){
     document.getElementById('subtab-'+t).style.display=t===name?'block':'none';
   });
   document.querySelectorAll('.sub-tab').forEach(function(b,i){
-    b.classList.toggle('active',['cronica','cosecha','minuta','notas'][i]===name);
+    b.classList.toggle('active',['notas','cronica','cosecha','minuta'][i]===name);
   });
   if(name==='notas')renderNotas();
 }
@@ -2328,10 +2417,26 @@ function fetchEuro(force){
   var today=todayStr();
   if(!force&&appState.euroRate&&appState.euroDate===today){showEuroRate(appState.euroRate,appState.euroDate,appState.euroSource||'');return;}
   document.getElementById('euro-val').textContent='Cargando...';document.getElementById('euro-date').textContent='';
-  fetch('https://api.frankfurter.app/latest?from=EUR&to=ARS')
-  .then(function(r){if(!r.ok)throw new Error();return r.json();})
-  .then(function(d){if(!d.rates||!d.rates.ARS)throw new Error();saveEuro(d.rates.ARS,today,'Banco Central Europeo');})
-  .catch(function(){fetch('https://open.er-api.com/v6/latest/EUR').then(function(r){if(!r.ok)throw new Error();return r.json();}).then(function(d){if(!d.rates||!d.rates.ARS)throw new Error();saveEuro(d.rates.ARS,today,'ExchangeRate-API');}).catch(function(){if(appState.euroRate){showEuroRate(appState.euroRate,appState.euroDate,'ultimo guardado');}else{document.getElementById('euro-val').textContent='No disponible';}});});
+  // Pedir EUR→ARS y EUR→USD en paralelo desde Frankfurter
+  Promise.all([
+    fetch('https://api.frankfurter.app/latest?from=EUR&to=ARS').then(function(r){if(!r.ok)throw new Error();return r.json();}),
+    fetch('https://api.frankfurter.app/latest?from=EUR&to=USD').then(function(r){if(!r.ok)throw new Error();return r.json();})
+  ]).then(function(results){
+    var arsData=results[0],usdData=results[1];
+    if(!arsData.rates||!arsData.rates.ARS)throw new Error();
+    appState.usdRate=usdData.rates&&usdData.rates.USD?usdData.rates.USD:null;
+    saveEuro(arsData.rates.ARS,today,'Banco Central Europeo');
+  }).catch(function(){
+    // Fallback: ExchangeRate-API para ARS, USD con dato anterior si existe
+    fetch('https://open.er-api.com/v6/latest/EUR').then(function(r){if(!r.ok)throw new Error();return r.json();}).then(function(d){
+      if(!d.rates||!d.rates.ARS)throw new Error();
+      if(d.rates.USD)appState.usdRate=d.rates.USD;
+      saveEuro(d.rates.ARS,today,'ExchangeRate-API');
+    }).catch(function(){
+      if(appState.euroRate){showEuroRate(appState.euroRate,appState.euroDate,'ultimo guardado');}
+      else{document.getElementById('euro-val').textContent='No disponible';}
+    });
+  });
 }
 function saveEuro(r,d,s){appState.euroRate=r;appState.euroDate=d;appState.euroSource=s;saveState();showEuroRate(r,d,s);}
 function showEuroRate(r,d,s){document.getElementById('euro-val').textContent='$ '+parseFloat(r).toLocaleString('es-AR',{maximumFractionDigits:2});document.getElementById('euro-date').textContent=(s?s+' - ':'')+d;}
@@ -2430,13 +2535,12 @@ function gastosDeFuente(nombreFuente){
 function totalGastadoFuente(nombreFuente,monedaFuente){
   return gastosDeFuente(nombreFuente).reduce(function(a,g){
     var m=parseFloat(g.monto)||0;
-    // Si la moneda del gasto coincide con la de la fuente, sumar directo
     if(g.moneda===monedaFuente)return a+m;
-    // Si difieren, convertir via EUR como puente
+    // Convertir via EUR como puente
     var gEur=eurEquiv(g);
     if(monedaFuente==='EUR')return a+gEur;
     if(monedaFuente==='ARS')return a+(appState.euroRate?gEur*appState.euroRate:0);
-    if(monedaFuente==='USD')return a+(appState.euroRate?gEur*(appState.euroRate/1):0);// simplificado
+    if(monedaFuente==='USD')return a+(appState.usdRate?gEur*appState.usdRate:gEur*1.08);
     return a+m;
   },0);
 }
@@ -2475,6 +2579,7 @@ function renderCapital(){
   var totalCapEur=cap.reduce(function(a,c){
     if(c.moneda==='EUR')return a+c.monto;
     if(c.moneda==='ARS')return a+(appState.euroRate?c.monto/appState.euroRate:0);
+    if(c.moneda==='USD')return a+(appState.usdRate?c.monto/appState.usdRate:c.monto/1.08);
     return a;
   },0);
   var totalGastEur=appState.gastos.reduce(function(a,g){return a+eurEquiv(g);},0);
@@ -2506,8 +2611,13 @@ function actualizarSelectorFuente(){
 function eurEquiv(g){
   var m=parseFloat(g.monto)||0;
   if(g.moneda==='EUR')return m;
-  var rate=appState.euroRate||0;
-  return rate?m/rate:0;
+  if(g.moneda==='ARS'){var rate=appState.euroRate||0;return rate?m/rate:0;}
+  if(g.moneda==='USD'){
+    // usdRate = cuantos USD vale 1 EUR (ej: 1.08 significa EUR/USD=1.08)
+    var usd=appState.usdRate||1.08; // 1.08 es un valor aproximado razonable si no hay cotizacion
+    return m/usd;
+  }
+  return m;
 }
 
 function renderDashboard(){
@@ -2565,6 +2675,7 @@ function renderDashboard(){
   var totalCapEur=(appState.capital||[]).reduce(function(a,c){
     if(c.moneda==='EUR')return a+c.monto;
     if(c.moneda==='ARS')return a+(appState.euroRate?c.monto/appState.euroRate:0);
+    if(c.moneda==='USD')return a+(appState.usdRate?c.monto/appState.usdRate:c.monto/1.08);
     return a;
   },0);
   var pctEjecucion=totalCapEur>0?(totalEUREquiv/totalCapEur*100).toFixed(0):null;
@@ -2609,6 +2720,7 @@ function exportGastosExcel(){
   var totalCapEur=cap.reduce(function(a,c){
     if(c.moneda==='EUR')return a+c.monto;
     if(c.moneda==='ARS')return a+(appState.euroRate?c.monto/appState.euroRate:0);
+    if(c.moneda==='USD')return a+(appState.usdRate?c.monto/appState.usdRate:c.monto/1.08);
     return a;
   },0);
   var totalGastEur=appState.gastos.reduce(function(a,g){return a+eurEquiv(g);},0);
