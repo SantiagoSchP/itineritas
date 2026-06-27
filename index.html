@@ -173,7 +173,7 @@ body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink)
 
 /* ===== NOTAS POST-IT ===== */
 .notas-board{padding:4px 0}
-.postit{border-radius:4px 12px 12px 4px;padding:12px 14px 14px;margin-bottom:14px;box-shadow:0 3px 10px rgba(0,0,0,.13),2px 2px 0 rgba(0,0,0,.07);position:relative;transition:box-shadow .2s}
+.postit{border-radius:4px 12px 12px 4px;padding:12px 14px 14px;margin-bottom:14px;box-shadow:0 3px 10px rgba(0,0,0,.13),2px 2px 0 rgba(0,0,0,.07);position:relative;transition:box-shadow .2s;-webkit-user-select:none;user-select:none}
 .postit:hover{box-shadow:0 6px 18px rgba(0,0,0,.18),2px 2px 0 rgba(0,0,0,.08)}
 .postit-yellow{background:#fff9c4}
 .postit-blue{background:#c8e6ff}
@@ -292,7 +292,7 @@ label{font-size:0.7333rem;text-transform:uppercase;letter-spacing:.08em;color:va
 .euro-box .euro-date{font-size:0.7333rem;color:var(--ink3);margin-top:4px;font-style:italic}
 .calc-row{display:flex;gap:8px;align-items:center;margin-top:8px}
 .calc-row input{margin-bottom:0}
-.calc-result{font-family:'Cinzel',serif;font-size:1.0667rem;font-weight:700;color:var(--crimson);min-width:90px;text-align:right}
+.calc-result{font-family:'Cinzel',serif;font-size:1.0667rem;font-weight:700;color:var(--crimson);min-width:90px;text-align:right;line-height:1.4}
 .int-item{border:0.5px solid var(--border2);border-radius:10px;padding:12px;margin-bottom:8px;background:var(--card-bg)}
 .int-item .int-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .int-item .int-txt{font-family:'IM Fell English',serif;font-size:0.9333rem;line-height:1.6;color:var(--ink)}
@@ -641,9 +641,13 @@ input[type="file"]{display:none}
     <div class="card">
       <div class="card-title"><span>&#128290;</span> Calculadora</div>
       <div class="calc-row">
-        <select id="calc-from" style="width:90px;margin-bottom:0" onchange="calcConvert()"><option value="eur">EUR</option><option value="ars">ARS</option></select>
+        <select id="calc-from" style="width:90px;margin-bottom:0" onchange="calcConvert()">
+          <option value="eur">EUR</option>
+          <option value="ars">ARS</option>
+          <option value="usd">USD</option>
+        </select>
         <input type="number" id="calc-amount" placeholder="0.00" style="flex:1;margin-bottom:0" oninput="calcConvert()">
-        <div class="calc-result" id="calc-result">= -</div>
+        <div id="calc-result" class="calc-result">= -</div>
       </div>
     </div>
 
@@ -1394,7 +1398,7 @@ function showSection(name){
   var nb=document.getElementById('nav-'+name);if(nb)nb.classList.add('active');
   var bnb=document.getElementById('bnav-'+name);if(bnb)bnb.classList.add('active');
   closeDrawer();
-  if(name==='bitacora')renderBitacoraDays();
+  if(name==='bitacora'){renderBitacoraDays();renderNotas();}
   if(name==='finanzas')renderGastos();
   if(name==='intenciones')renderIntenciones();
   if(name==='home')renderHome();
@@ -1769,6 +1773,8 @@ function renderNotas(){
       dragIdx=parseInt(el.getAttribute('data-nota-idx'));
       el.style.opacity='0.5';
       e.dataTransfer.effectAllowed='move';
+      // Evitar que el texto quede seleccionado durante el arrastre
+      if(window.getSelection)window.getSelection().removeAllRanges();
     });
     el.addEventListener('dragend',function(){
       el.style.opacity='';
@@ -2440,7 +2446,33 @@ function fetchEuro(force){
 }
 function saveEuro(r,d,s){appState.euroRate=r;appState.euroDate=d;appState.euroSource=s;saveState();showEuroRate(r,d,s);}
 function showEuroRate(r,d,s){document.getElementById('euro-val').textContent='$ '+parseFloat(r).toLocaleString('es-AR',{maximumFractionDigits:2});document.getElementById('euro-date').textContent=(s?s+' - ':'')+d;}
-function calcConvert(){var a=parseFloat(document.getElementById('calc-amount').value)||0;var f=document.getElementById('calc-from').value;var r=appState.euroRate||0;if(!r){document.getElementById('calc-result').textContent='= (actualizar)';return;}document.getElementById('calc-result').textContent=f==='eur'?'= $ '+(a*r).toLocaleString('es-AR',{maximumFractionDigits:0}):'= EUR '+(a/r).toFixed(2);}
+function calcConvert(){
+  var a=parseFloat(document.getElementById('calc-amount').value)||0;
+  var f=document.getElementById('calc-from').value;
+  var res=document.getElementById('calc-result');
+  var eur=appState.euroRate||0;
+  var usd=appState.usdRate||1.08;
+  if(!a){res.innerHTML='= -';return;}
+  if(f==='eur'){
+    if(!eur){res.innerHTML='= (actualiz&aacute; cotizaci&oacute;n)';return;}
+    var enArs=a*eur;
+    var enUsd=a*usd;
+    res.innerHTML='<span>= ARS '+(enArs).toLocaleString('es-AR',{maximumFractionDigits:0})+'</span><br><span style="font-size:0.8rem">= USD '+enUsd.toFixed(2)+'</span>';
+  }else if(f==='ars'){
+    if(!eur){res.innerHTML='= (actualiz&aacute; cotizaci&oacute;n)';return;}
+    var enEur=a/eur;
+    var enUsdFromArs=enEur*usd;
+    res.innerHTML='<span>= EUR '+enEur.toFixed(2)+'</span><br><span style="font-size:0.8rem">= USD '+enUsdFromArs.toFixed(2)+'</span>';
+  }else if(f==='usd'){
+    var enEurFromUsd=a/usd;
+    if(eur){
+      var enArsFromUsd=enEurFromUsd*eur;
+      res.innerHTML='<span>= EUR '+enEurFromUsd.toFixed(2)+'</span><br><span style="font-size:0.8rem">= ARS '+enArsFromUsd.toLocaleString('es-AR',{maximumFractionDigits:0})+'</span>';
+    }else{
+      res.innerHTML='<span>= EUR '+enEurFromUsd.toFixed(2)+'</span><br><span style="font-size:0.8rem">(actualiz&aacute; para ver ARS)</span>';
+    }
+  }
+}
 function addGasto(){
   var fuente=val('gasto-fuente');
   if(!fuente){showToast('Elegí la fuente de pago.');return;}
