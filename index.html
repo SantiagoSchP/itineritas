@@ -243,12 +243,12 @@ label{font-size:0.7333rem;text-transform:uppercase;letter-spacing:.08em;color:va
 .home-rule{width:80px;height:1.5px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:8px auto}
 .home-date{text-align:center;font-family:'IM Fell English',serif;font-size:1.0667rem;color:var(--ink3);margin-top:10px;margin-bottom:1rem}
 .stat-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1rem}
-.trip-progress-card{background:var(--card-bg);border-radius:var(--radius);border:0.5px solid var(--border2);padding:.9rem 1.1rem;text-align:center}
+.trip-progress-card{background:var(--card-bg);border-radius:var(--radius);border:0.5px solid var(--border2);padding:.9rem 1.1rem;text-align:center;max-width:320px;width:100%}
 .trip-progress-label{font-family:'Cinzel',serif;font-size:0.8667rem;color:var(--crimson);margin-bottom:8px}
 .trip-progress-bar-bg{width:100%;height:14px;border-radius:8px;background:rgba(90,60,10,.10);overflow:hidden;border:0.5px solid var(--border2)}
 .trip-progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--crimson));border-radius:8px;transition:width .4s ease}
 .trip-progress-sub{font-size:0.7333rem;color:var(--ink3);margin-top:6px}
-.trip-countdown-card{background:linear-gradient(135deg,var(--gold-tint),var(--crimson-tint));border:0.5px solid var(--border2);border-radius:var(--radius);padding:1rem;text-align:center}
+.trip-countdown-card{background:linear-gradient(135deg,var(--gold-tint),var(--crimson-tint));border:0.5px solid var(--border2);border-radius:var(--radius);padding:1rem;text-align:center;max-width:320px;width:100%}
 .trip-countdown-num{font-family:'Cinzel',serif;font-size:1.8667rem;font-weight:600;color:var(--crimson)}
 .trip-countdown-txt{font-size:0.8667rem;color:var(--ink3);margin-top:4px;font-family:'IM Fell English',serif}
 .stat-card{background:var(--card-bg);border-radius:var(--radius);border:0.5px solid var(--border2);padding:.9rem 1rem;text-align:center}
@@ -522,7 +522,7 @@ input[type="file"]{display:none}
     <div class="stat-row">
       <div class="stat-card"><div class="stat-num" id="home-day">-</div><div class="stat-lbl">Dia del viaje</div></div>
     </div>
-    <div id="home-trip-status" style="margin-bottom:1rem"></div>
+    <div id="home-trip-status" style="margin-bottom:1rem;display:flex;justify-content:center"></div>
     <div class="card">
       <div class="card-title"><span>&#128591;</span> Intenciones de hoy</div>
       <div id="home-intenciones-hoy"><div class="empty-state"><span class="eico">&#128591;</span>Sin intenciones para hoy</div></div>
@@ -1486,7 +1486,7 @@ function renderHome(){
   document.getElementById('home-crono').innerHTML=crono.length?crono.map(function(c,i){
     var mapsHtml=c.maps?'<a class="crono-maps-link" href="'+esc(c.maps)+'" target="_blank">Ver en Maps</a>':'';
     var pastClass=(c.hora&&c.hora<=nowHM)?' past':'';
-    return '<div class="crono-item'+pastClass+'"><div class="crono-item-top"><div class="crono-time">'+esc(c.hora)+'</div><div class="crono-desc">'+esc(c.desc)+(c.lugar?'<div class="crono-place">'+esc(c.lugar)+'</div>':'')+'</div></div>'+mapsHtml+'</div>';
+    return '<div class="crono-item'+pastClass+'"><div class="crono-item-top"><div class="crono-time">'+(c.todoElDia?'Todo el d&iacute;a':esc(c.hora))+'</div><div class="crono-desc">'+esc(c.desc)+(c.lugar?'<div class="crono-place">'+esc(c.lugar)+'</div>':'')+'</div></div>'+mapsHtml+'</div>';
   }).join(''):'<div class="empty-state"><span class="eico">&#128197;</span>Sin actividades cargadas</div>';
   var finDiv=document.getElementById('home-fin-resumen');
   var cap=appState.capital||[];
@@ -1524,7 +1524,7 @@ function openCronoFull(){
     byDate[fecha].forEach(function(c){
       var realIdx=appState.cronograma.indexOf(c);
       var mapsHtml=c.maps?'<a class="crono-maps-link" href="'+esc(c.maps)+'" target="_blank">Maps</a>':'';
-      html+='<div class="crono-item"><div class="crono-item-top"><div class="crono-time">'+esc(c.hora)+'</div><div class="crono-desc">'+esc(c.desc)+(c.lugar?'<div class="crono-place">'+esc(c.lugar)+'</div>':'')+'</div><div class="crono-actions"><button class="btn btn-sm btn-edit" onclick="openEditCrono('+realIdx+')">Editar</button><button class="btn btn-sm btn-danger" onclick="removeCrono('+realIdx+')">Borrar</button></div></div>'+mapsHtml+'</div>';
+      html+='<div class="crono-item"><div class="crono-item-top"><div class="crono-time">'+(c.todoElDia?'Todo el d&iacute;a':esc(c.hora))+'</div><div class="crono-desc">'+esc(c.desc)+(c.lugar?'<div class="crono-place">'+esc(c.lugar)+'</div>':'')+'</div><div class="crono-actions"><button class="btn btn-sm btn-edit" onclick="openEditCrono('+realIdx+')">Editar</button><button class="btn btn-sm btn-danger" onclick="removeCrono('+realIdx+')">Borrar</button></div></div>'+mapsHtml+'</div>';
     });
   });
   document.getElementById('crono-full-content').innerHTML=html;
@@ -2909,29 +2909,107 @@ function loadCronoXLSX(input){
       var wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
       var ws=wb.Sheets[wb.SheetNames[0]];
       var raw=XLSX.utils.sheet_to_json(ws,{raw:false,dateNF:'yyyy-mm-dd',defval:''});
-      if(!raw.length){document.getElementById('crono-excel-msg').textContent='El archivo parece vacio.';return;}
+      if(!raw.length){document.getElementById('crono-excel-msg').textContent='El archivo parece vacío.';return;}
       var keys=Object.keys(raw[0]);
-      function findCol(names){for(var ni=0;ni<names.length;ni++){for(var ki=0;ki<keys.length;ki++){var k=keys[ki].toLowerCase().replace(/[^a-z]/g,'');var n=names[ni].toLowerCase().replace(/[^a-z]/g,'');if(k===n||k.indexOf(n)>-1||n.indexOf(k)>-1)return keys[ki];}}return null;}
-      var colF=findCol(['fecha','date','dia']);
+
+      function findCol(names){
+        for(var ni=0;ni<names.length;ni++){
+          for(var ki=0;ki<keys.length;ki++){
+            var k=keys[ki].toLowerCase().replace(/[^a-záéíóúñ0-9]/gi,'');
+            var n=names[ni].toLowerCase().replace(/[^a-záéíóúñ0-9]/gi,'');
+            if(k===n||k.indexOf(n)>-1||n.indexOf(k)>-1)return keys[ki];
+          }
+        }
+        return null;
+      }
+
+      // Columnas de fecha: puede ser una sola o varias (dia, mes, anio / dia semana, etc.)
+      var colF=findCol(['fecha','date','dia','day']);
+      var colDia=findCol(['numeroDia','nroDia','numeroDeDia','dayNumber','dd']);
+      var colMes=findCol(['mes','month','mm']);
+      var colAnio=findCol(['anio','año','year','aaaa','yyyy']);
+      var colDiaSem=findCol(['diaSemana','weekday','diasemana','dayofweek']);
       var colH=findCol(['hora','hour','time','horario']);
-      var colD=findCol(['descripcion','desc','actividad','activity','nombre','detalle','titulo']);
+      var colD=findCol(['descripcion','desc','actividad','activity','nombre','detalle','titulo','title']);
       var colL=findCol(['lugar','location','locacion','ciudad','city']);
       var colM=findCol(['maps','mapa','link','url','google']);
       var added=0;
+
       raw.forEach(function(row){
-        var fechaRaw=colF?row[colF]:'';var horaRaw=colH?row[colH]:'';var descRaw=colD?row[colD]:'';var lugarRaw=colL?row[colL]:'';var mapsRaw=colM?row[colM]:'';
-        if(!colD){var vals=Object.values(row);fechaRaw=vals[0]||'';horaRaw=vals[1]||'';descRaw=vals[2]||'';lugarRaw=vals[3]||'';mapsRaw=vals[4]||'';}
-        var desc=String(descRaw).trim();if(!desc)return;
-        var hora=String(horaRaw).trim();if(!hora)hora='00:00';
-        if(/^\d+\.\d+$/.test(hora)){var hv=parseFloat(hora)*24;var hh=Math.floor(hv);var mm=Math.round((hv-hh)*60);hora=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');}
-        hora=hora.slice(0,5);if(!/^\d{1,2}:\d{2}$/.test(hora))hora='00:00';
+        var fechaRaw='';
+        var horaRaw=colH?row[colH]:'';
+        var descRaw=colD?row[colD]:'';
+        var lugarRaw=colL?row[colL]:'';
+        var mapsRaw=colM?row[colM]:'';
+
+        if(!colD){
+          // Sin columna detectada: usar posicion fija
+          var vals=Object.values(row);
+          fechaRaw=vals[0]||'';horaRaw=vals[1]||'';descRaw=vals[2]||'';lugarRaw=vals[3]||'';mapsRaw=vals[4]||'';
+        } else if(colF){
+          // Fecha en una sola columna
+          fechaRaw=row[colF]||'';
+        } else if(colDia&&colMes){
+          // Fecha en columnas separadas: dia + mes (+ anio opcional)
+          var d=String(row[colDia]||'').trim().padStart(2,'0');
+          var m=String(row[colMes]||'').trim();
+          // Si mes es nombre, convertir a numero
+          var meses={enero:'01',febrero:'02',marzo:'03',abril:'04',mayo:'05',junio:'06',julio:'07',agosto:'08',septiembre:'09',octubre:'10',noviembre:'11',diciembre:'12',
+                     january:'01',february:'02',march:'03',april:'04',may:'05',june:'06',july:'07',august:'08',september:'09',october:'10',november:'11',december:'12'};
+          var mLow=m.toLowerCase().replace(/[^a-z]/g,'');
+          if(meses[mLow])m=meses[mLow];
+          else m=m.padStart(2,'0');
+          var a=colAnio?String(row[colAnio]||'').trim():(new Date().getFullYear().toString());
+          if(a.length===2)a='20'+a;
+          fechaRaw=a+'-'+m+'-'+d;
+        } else if(colDiaSem){
+          // Solo tiene dia de semana sin fecha numerica: usar el texto como referencia
+          // pero sin fecha concreta no podemos parsear, dejamos todayStr
+          fechaRaw='';
+        }
+
+        var desc=String(descRaw).trim();
+        if(!desc)return;
+
+        // Hora: aceptar "Todo el dia", "Todo el día", "All day", vacío → marcar especial
+        var hora=String(horaRaw).trim();
+        var todoElDia=false;
+        if(!hora||/todo\s*el\s*d[ií]a/i.test(hora)||/all\s*day/i.test(hora)||hora==='-'||hora==='--'){
+          todoElDia=true;
+          hora='00:00';
+        } else if(/^\d+\.\d+$/.test(hora)){
+          // Numero decimal de Excel (ej: 0.375 = 09:00)
+          var hv=parseFloat(hora)*24;var hh=Math.floor(hv);var mm=Math.round((hv-hh)*60);
+          hora=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+        } else {
+          // Limpiar formato 12h: "9:30 AM" → "09:30"
+          var ampm=hora.match(/(\d{1,2}):?(\d{0,2})\s*(am|pm)/i);
+          if(ampm){
+            var hh12=parseInt(ampm[1]);var mm12=parseInt(ampm[2]||0);var ap=ampm[3].toLowerCase();
+            if(ap==='pm'&&hh12<12)hh12+=12;
+            if(ap==='am'&&hh12===12)hh12=0;
+            hora=String(hh12).padStart(2,'0')+':'+String(mm12).padStart(2,'0');
+          }
+          hora=hora.slice(0,5);
+          if(!/^\d{1,2}:\d{2}$/.test(hora))hora='00:00';
+        }
+
         var fs=parseFecha(String(fechaRaw))||todayStr();
-        appState.cronograma.push({hora:hora,desc:desc,lugar:String(lugarRaw).trim(),maps:String(mapsRaw).trim(),fecha:fs});added++;
+        var entry={hora:hora,desc:desc,lugar:String(lugarRaw).trim(),maps:String(mapsRaw).trim(),fecha:fs};
+        if(todoElDia)entry.todoElDia=true;
+        appState.cronograma.push(entry);
+        added++;
       });
-      saveState();document.getElementById('crono-excel-msg').textContent=added+' actividades importadas.';showToast(added+' actividades importadas');renderHome();
+
+      saveState();
+      document.getElementById('crono-excel-msg').textContent=added+' actividades importadas.';
+      showToast(added+' actividades importadas');
+      renderHome();
     }catch(ex){document.getElementById('crono-excel-msg').textContent='Error: '+ex.message;}
   };
-  r.onerror=function(){document.getElementById('crono-excel-msg').textContent='Error al leer el archivo.';};r.readAsBinaryString(file);input.value='';
+  r.onerror=function(){document.getElementById('crono-excel-msg').textContent='Error al leer el archivo.';};
+  r.readAsBinaryString(file);
+  input.value='';
 }
 
 function renderPerfil(){document.getElementById('profile-name-display').textContent=currentName||currentUser;document.getElementById('profile-email-display').textContent=currentUser;document.getElementById('profile-avatar').textContent=(currentName||currentUser).charAt(0).toUpperCase();document.getElementById('edit-name').value=currentName||'';document.getElementById('trip-start-input').value=appState.tripStart||'';document.getElementById('trip-end-input').value=appState.tripEnd||'';mostrarDuracionViaje();renderNotifStatus();scheduleAllNotifs();renderResumenDiario();actualizarBotonesTema(lsGet('theme')||'light');actualizarBotonesTextSize(lsGet('textsize')||'md');}
