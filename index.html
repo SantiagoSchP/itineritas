@@ -654,20 +654,20 @@ input[type="file"]{display:none}
     <!-- CAPITAL DEL VIAJE -->
     <div class="card">
       <div class="card-title"><span>&#128181;</span> Capital del viaje</div>
-      <p style="font-size:0.8rem;color:var(--ink3);margin-bottom:10px">Carg&aacute; cu&aacute;nto din ero ten&eacute;s disponible por fuente (efectivo, tarjetas). Los gastos se van descontando de cada fuente autom&aacute;ticamente.</p>
+      <p style="font-size:0.8rem;color:var(--ink3);margin-bottom:10px">Sum&aacute; todos tus ingresos disponibles para el viaje. La app los suma en una caja com&uacute;n y te muestra cu&aacute;nto quer queda a medida que registr&aacute;s gastos.</p>
       <div id="capital-list"></div>
-      <button class="btn btn-sm btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="openCapitalModal(-1)">+ Agregar fuente de dinero</button>
+      <button class="btn btn-sm btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="openCapitalModal(-1)">+ Agregar ingreso</button>
     </div>
 
     <div class="card">
       <div class="card-title"><span>&#128236;</span> Registrar gasto</div>
-      <label>Descripcion</label><input type="text" id="gasto-desc" placeholder="Ej: Almuerzo en Roma">
+      <label>Descripci&oacute;n</label><input type="text" id="gasto-desc" placeholder="Ej: Almuerzo en Roma">
       <label>Categor&iacute;a</label>
       <select id="gasto-cat"><option>Alimentacion</option><option>Alojamiento</option><option>Articulos religiosos</option><option>Comunicaciones</option><option>Entradas / museos</option><option>Indumentaria</option><option>Otros</option><option>Salud</option><option>Souvenirs</option><option>Transporte</option></select>
       <label>Monto</label>
       <div style="display:flex;gap:8px"><select id="gasto-moneda" style="width:80px;margin-bottom:0"><option value="EUR">EUR</option><option value="ARS">ARS</option><option value="USD">USD</option></select><input type="number" id="gasto-monto" placeholder="0.00" style="flex:1;margin-bottom:8px"></div>
-      <label>Fuente de pago <span style="color:var(--crimson);font-size:0.8rem">*obligatorio</span></label>
-      <select id="gasto-fuente"><option value="">— Elegir fuente —</option></select>
+      <label>M&eacute;todo de pago</label>
+      <select id="gasto-medio"><option>Tarjeta cr&eacute;dito</option><option>Tarjeta d&eacute;bito</option><option>Efectivo EUR</option><option>Efectivo ARS</option><option>Efectivo USD</option><option>Transferencia</option></select>
       <button class="btn btn-primary" style="width:100%;margin-top:8px;justify-content:center" onclick="addGasto()">+ Agregar gasto</button>
     </div>
     <div class="card">
@@ -916,24 +916,16 @@ input[type="file"]{display:none}
 <!-- MODAL CAPITAL -->
 <div class="modal-bg" id="modal-capital">
   <div class="modal">
-    <div class="modal-title" id="modal-capital-title">Agregar fuente de dinero <button class="modal-close" onclick="closeModal('modal-capital')">X</button></div>
-    <label>Nombre de la fuente</label>
+    <div class="modal-title" id="modal-capital-title">Agregar ingreso <button class="modal-close" onclick="closeModal('modal-capital')">X</button></div>
+    <label>Descripci&oacute;n</label>
     <input type="text" id="capital-nombre" placeholder="Ej: Efectivo EUR, Visa Santander, D&eacute;bito BNA...">
-    <label>Tipo</label>
-    <select id="capital-tipo">
-      <option value="efectivo">Efectivo</option>
-      <option value="tarjeta_credito">Tarjeta de cr&eacute;dito</option>
-      <option value="tarjeta_debito">Tarjeta de d&eacute;bito</option>
-      <option value="transferencia">Transferencia / digital</option>
-      <option value="otro">Otro</option>
-    </select>
     <label>Moneda</label>
     <select id="capital-moneda">
       <option value="EUR">EUR &mdash; Euros</option>
       <option value="ARS">ARS &mdash; Pesos argentinos</option>
       <option value="USD">USD &mdash; D&oacute;lares</option>
     </select>
-    <label>Monto disponible / presupuestado</label>
+    <label>Monto</label>
     <input type="number" id="capital-monto" placeholder="0.00" min="0" step="0.01">
     <input type="hidden" id="capital-edit-idx" value="-1">
     <div class="flex-row" style="margin-top:8px">
@@ -2474,9 +2466,8 @@ function calcConvert(){
   }
 }
 function addGasto(){
-  var fuente=val('gasto-fuente');
-  if(!fuente){showToast('Elegí la fuente de pago.');return;}
-  var g={desc:val('gasto-desc'),cat:val('gasto-cat'),monto:val('gasto-monto'),moneda:val('gasto-moneda'),fuente:fuente,fecha:todayStr()};
+  var medio=val('gasto-medio');
+  var g={desc:val('gasto-desc'),cat:val('gasto-cat'),monto:val('gasto-monto'),moneda:val('gasto-moneda'),medio:medio,fecha:todayStr()};
   if(!g.desc||!g.monto){showToast('Completá descripción y monto');return;}
   appState.gastos.push(g);
   renderGastos();
@@ -2516,19 +2507,17 @@ var COLORS=['#8b1a1a','#b8860b','#0f5c52','#d4a017','#3d2f18','#1a8a7a','#b52020
 // ===== CAPITAL DEL VIAJE =====
 function openCapitalModal(idx){
   document.getElementById('capital-nombre').value='';
-  document.getElementById('capital-tipo').value='efectivo';
   document.getElementById('capital-moneda').value='EUR';
   document.getElementById('capital-monto').value='';
   document.getElementById('capital-edit-idx').value=idx;
   if(idx>=0&&appState.capital&&appState.capital[idx]){
     var c=appState.capital[idx];
     document.getElementById('capital-nombre').value=c.nombre||'';
-    document.getElementById('capital-tipo').value=c.tipo||'efectivo';
     document.getElementById('capital-moneda').value=c.moneda||'EUR';
     document.getElementById('capital-monto').value=c.monto||'';
-    document.getElementById('modal-capital-title').innerHTML='Editar fuente <button class="modal-close" onclick="closeModal(\'modal-capital\')">X</button>';
+    document.getElementById('modal-capital-title').innerHTML='Editar ingreso <button class="modal-close" onclick="closeModal(\'modal-capital\')">X</button>';
   }else{
-    document.getElementById('modal-capital-title').innerHTML='Agregar fuente de dinero <button class="modal-close" onclick="closeModal(\'modal-capital\')">X</button>';
+    document.getElementById('modal-capital-title').innerHTML='Agregar ingreso <button class="modal-close" onclick="closeModal(\'modal-capital\')">X</button>';
   }
   openModal('modal-capital');
 }
@@ -2536,27 +2525,25 @@ function openCapitalModal(idx){
 function saveCapital(){
   var nombre=document.getElementById('capital-nombre').value.trim();
   var monto=parseFloat(document.getElementById('capital-monto').value)||0;
-  if(!nombre){showToast('Poné un nombre para la fuente.');return;}
-  if(!monto){showToast('Ingresá el monto disponible.');return;}
+  if(!nombre){showToast('Poné una descripción para el ingreso.');return;}
+  if(!monto){showToast('Ingresá el monto.');return;}
   if(!appState.capital)appState.capital=[];
-  var c={nombre:nombre,tipo:val('capital-tipo'),moneda:val('capital-moneda'),monto:monto};
+  var c={nombre:nombre,moneda:val('capital-moneda'),monto:monto};
   var idx=parseInt(document.getElementById('capital-edit-idx').value);
   if(idx>=0)appState.capital[idx]=c;
   else appState.capital.push(c);
   saveState();
   renderCapital();
-  actualizarSelectorFuente();
   closeModal('modal-capital');
-  showToast(idx>=0?'Fuente actualizada':'Fuente agregada');
+  showToast(idx>=0?'Ingreso actualizado':'Ingreso agregado');
 }
 
 function deleteCapital(idx){
-  if(!confirm('¿Borrar esta fuente de dinero? Los gastos asociados no se van a borrar, pero van a quedar sin fuente asignada.'))return;
+  if(!confirm('¿Borrar este ingreso?'))return;
   appState.capital.splice(idx,1);
   saveState();
   renderCapital();
-  actualizarSelectorFuente();
-  showToast('Fuente eliminada');
+  showToast('Ingreso eliminado');
 }
 
 // Calcula cuanto se gastó de una fuente específica
@@ -2581,33 +2568,9 @@ function renderCapital(){
   if(!document.getElementById('capital-list'))return;
   var cap=appState.capital||[];
   if(cap.length===0){
-    document.getElementById('capital-list').innerHTML='<div class="empty-state" style="padding:10px 0"><span class="eico">&#128181;</span>Sin fuentes cargadas</div>';
+    document.getElementById('capital-list').innerHTML='<div class="empty-state" style="padding:10px 0"><span class="eico">&#128181;</span>Sin ingresos cargados todav&iacute;a</div>';
     return;
   }
-  var html=cap.map(function(c,i){
-    var gastado=totalGastadoFuente(c.nombre,c.moneda);
-    var pct=c.monto>0?Math.min(gastado/c.monto*100,100):0;
-    var resto=Math.max(c.monto-gastado,0);
-    var fillClass=pct>=100?'over':pct>=80?'warn':'ok';
-    return '<div class="capital-item">'+
-      '<div style="flex:1;min-width:0">'+
-        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'+
-          '<span class="capital-nombre">'+esc(c.nombre)+'</span>'+
-          '<span class="capital-moneda-badge">'+c.moneda+'</span>'+
-        '</div>'+
-        '<div class="capital-barra-bg"><div class="capital-barra-fill '+fillClass+'" style="width:'+pct.toFixed(1)+'%"></div></div>'+
-        '<div style="display:flex;justify-content:space-between;font-size:0.7333rem;color:var(--ink3);margin-top:3px">'+
-          '<span>Gastado: '+c.moneda+' '+gastado.toFixed(2)+'</span>'+
-          '<span>Queda: '+c.moneda+' '+resto.toFixed(2)+' / '+c.monto.toFixed(2)+'</span>'+
-        '</div>'+
-      '</div>'+
-      '<div style="display:flex;gap:4px;margin-left:8px;flex-shrink:0">'+
-        '<button class="btn btn-sm btn-edit" onclick="openCapitalModal('+i+')">Editar</button>'+
-        '<button class="btn btn-sm btn-danger" onclick="deleteCapital('+i+')">Borrar</button>'+
-      '</div>'+
-    '</div>';
-  }).join('');
-  // Total general en EUR
   var totalCapEur=cap.reduce(function(a,c){
     if(c.moneda==='EUR')return a+c.monto;
     if(c.moneda==='ARS')return a+(appState.euroRate?c.monto/appState.euroRate:0);
@@ -2615,30 +2578,35 @@ function renderCapital(){
     return a;
   },0);
   var totalGastEur=appState.gastos.reduce(function(a,g){return a+eurEquiv(g);},0);
-  var pctTotal=totalCapEur>0?Math.min(totalGastEur/totalCapEur*100,100):0;
-  html+='<div class="capital-total-row">'+
-    '<span class="capital-total-lbl">Total gastado / disponible</span>'+
-    '<span class="capital-total-val">EUR '+totalGastEur.toFixed(2)+' / '+totalCapEur.toFixed(2)+
-      ' <span style="font-size:0.7333rem;color:var(--ink3)">('+pctTotal.toFixed(0)+'%)</span></span>'+
+  var resto=Math.max(totalCapEur-totalGastEur,0);
+  var pct=totalCapEur>0?Math.min(totalGastEur/totalCapEur*100,100):0;
+  var fillColor=pct>=100?'var(--crimson2)':pct>=80?'var(--gold)':'var(--teal)';
+  var html=cap.map(function(c,i){
+    return '<div class="capital-item">'+
+      '<div style="flex:1;min-width:0"><span class="capital-nombre">'+esc(c.nombre)+'</span> <span class="capital-moneda-badge">'+c.moneda+'</span></div>'+
+      '<span style="font-size:0.8667rem;font-weight:600;color:var(--ink);margin-right:10px">'+c.moneda+' '+parseFloat(c.monto).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span>'+
+      '<div style="display:flex;gap:4px;flex-shrink:0">'+
+        '<button class="btn btn-sm btn-edit" onclick="openCapitalModal('+i+')">Editar</button>'+
+        '<button class="btn btn-sm btn-danger" onclick="deleteCapital('+i+')">Borrar</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  html+='<div style="border-top:1px solid var(--border2);margin-top:8px;padding-top:12px">'+
+    '<div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:6px">'+
+      '<span style="color:var(--ink3)">Total disponible (equiv. EUR)</span>'+
+      '<span style="font-weight:700;color:var(--ink)">EUR '+totalCapEur.toFixed(2)+'</span>'+
+    '</div>'+
+    '<div class="capital-barra-bg"><div class="capital-barra-fill" style="width:'+pct.toFixed(1)+'%;background:'+fillColor+'"></div></div>'+
+    '<div style="display:flex;justify-content:space-between;font-size:0.7333rem;margin-top:4px">'+
+      '<span style="color:var(--ink3)">Gastado: EUR '+totalGastEur.toFixed(2)+' ('+pct.toFixed(0)+'%)</span>'+
+      '<span style="color:'+fillColor+';font-weight:600">Queda: EUR '+resto.toFixed(2)+'</span>'+
+    '</div>'+
   '</div>';
   document.getElementById('capital-list').innerHTML=html;
 }
 
 // Rellena el <select> de fuente en el formulario de gastos con las fuentes cargadas
-function actualizarSelectorFuente(){
-  var sel=document.getElementById('gasto-fuente');
-  if(!sel)return;
-  var cap=appState.capital||[];
-  var prev=sel.value;
-  sel.innerHTML='<option value="">— Elegir fuente —</option>';
-  cap.forEach(function(c){
-    var opt=document.createElement('option');
-    opt.value=c.nombre;
-    opt.textContent=c.nombre+' ('+c.moneda+')';
-    sel.appendChild(opt);
-  });
-  if(prev)sel.value=prev;
-}
+function actualizarSelectorFuente(){/* ya no se usa, el medio de pago es fijo */}
 
 function eurEquiv(g){
   var m=parseFloat(g.monto)||0;
@@ -2670,13 +2638,11 @@ function renderDashboard(){
   var c1=document.getElementById('chart-categoria');var c2=document.getElementById('chart-medio');
   if(!c1||!c2)return;
 
+  var MEDIOS=['Tarjeta crédito','Tarjeta débito','Efectivo EUR','Efectivo ARS','Efectivo USD','Transferencia'];
   var catData=GASTO_CATS.map(function(cat){return appState.gastos.filter(function(g){return g.cat===cat;}).reduce(function(a,g){return a+eurEquiv(g);},0);});
-  // Para el grafico de fuentes, usamos las fuentes reales cargadas por el usuario
-  var cap=appState.capital||[];
-  var fuenteLabels=cap.length?cap.map(function(c){return c.nombre;}):['Sin fuente'];
-  var fuenteData=cap.length?cap.map(function(c){
-    return appState.gastos.filter(function(g){return g.fuente===c.nombre;}).reduce(function(a,g){return a+eurEquiv(g);},0);
-  }):[appState.gastos.reduce(function(a,g){return a+eurEquiv(g);},0)];
+  var medioData=MEDIOS.map(function(m){
+    return appState.gastos.filter(function(g){return (g.medio||g.fuente||'')=== m;}).reduce(function(a,g){return a+eurEquiv(g);},0);
+  });
 
   if(window._chartCat)window._chartCat.destroy();
   if(window._chartMedio)window._chartMedio.destroy();
@@ -2692,7 +2658,7 @@ function renderDashboard(){
   });
   window._chartMedio=new Chart(c2.getContext('2d'),{
     type:'doughnut',
-    data:{labels:fuenteLabels,datasets:[{data:fuenteData,backgroundColor:COLORS}]},
+    data:{labels:MEDIOS,datasets:[{data:medioData,backgroundColor:COLORS}]},
     options:{responsive:true,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10},color:colorTexto}}}}
   });
 
@@ -2700,8 +2666,8 @@ function renderDashboard(){
   var totalEUREquiv=appState.gastos.reduce(function(a,g){return a+eurEquiv(g);},0);
   var maxCatIdx=0;
   catData.forEach(function(v,i){if(v>catData[maxCatIdx])maxCatIdx=i;});
-  var maxFuenteIdx=0;
-  fuenteData.forEach(function(v,i){if(v>fuenteData[maxFuenteIdx])maxFuenteIdx=i;});
+  var maxMedioIdx=0;
+  medioData.forEach(function(v,i){if(v>medioData[maxMedioIdx])maxMedioIdx=i;});
 
   // Capital total disponible para calcular % de ejecucion
   var totalCapEur=(appState.capital||[]).reduce(function(a,c){
@@ -2718,7 +2684,7 @@ function renderDashboard(){
     (pctEjecucion!==null?'<div class="stat-card"><div class="stat-num">'+pctEjecucion+'%</div><div class="stat-lbl">Del presupuesto</div></div>':'')+
   '</div>';
   if(total>0&&catData[maxCatIdx]>0){html+='<p style="font-size:0.8667rem;margin-top:6px">Categor&iacute;a con m&aacute;s gasto: <strong>'+esc(GASTO_CATS[maxCatIdx])+'</strong> (EUR '+catData[maxCatIdx].toFixed(2)+')</p>';}
-  if(total>0&&fuenteData[maxFuenteIdx]>0){html+='<p style="font-size:0.8667rem">Fuente m&aacute;s usada: <strong>'+esc(fuenteLabels[maxFuenteIdx])+'</strong> (EUR '+fuenteData[maxFuenteIdx].toFixed(2)+')</p>';}
+  if(total>0&&medioData[maxMedioIdx]>0){html+='<p style="font-size:0.8667rem">Medio de pago m&aacute;s usado: <strong>'+esc(MEDIOS[maxMedioIdx])+'</strong> (EUR '+medioData[maxMedioIdx].toFixed(2)+')</p>';}
   if(!appState.euroRate&&appState.gastos.some(function(g){return g.moneda==='ARS'||g.moneda==='USD';})){
     html+='<p style="font-size:0.8rem;font-style:italic;margin-top:6px;color:var(--ink3)">Nota: para incluir los gastos en otras monedas en su equivalente en euros, actualizá la cotización del euro.</p>';
   }
@@ -2728,27 +2694,17 @@ function renderDashboard(){
 function exportGastosExcel(){
   var wb=XLSX.utils.book_new();
 
-  // Hoja 1: Detalle de gastos (con columna Fuente)
-  var det=[['Fecha','Descripcion','Categoria','Moneda','Monto','Fuente de pago']];
+  // Hoja 1: Detalle de gastos
+  var det=[['Fecha','Descripcion','Categoria','Moneda','Monto','Metodo de pago']];
   appState.gastos.forEach(function(g){
-    det.push([g.fecha,g.desc,g.cat,g.moneda,parseFloat(g.monto),g.fuente||g.medio||'']);
+    det.push([g.fecha,g.desc,g.cat,g.moneda,parseFloat(g.monto),g.medio||g.fuente||'']);
   });
   var ws1=XLSX.utils.aoa_to_sheet(det);
   ws1['!cols']=[{wch:12},{wch:30},{wch:20},{wch:8},{wch:12},{wch:22}];
   XLSX.utils.book_append_sheet(wb,ws1,'Detalle de gastos');
 
-  // Hoja 2: Capital del viaje
+  // Hoja 2: Capital del viaje (caja comun)
   var cap=appState.capital||[];
-  var capSheet=[['CAPITAL DEL VIAJE'],[''],
-    ['Fuente','Tipo','Moneda','Monto disponible','Total gastado','Saldo restante','% utilizado']];
-  cap.forEach(function(c){
-    var gastado=totalGastadoFuente(c.nombre,c.moneda);
-    var resto=Math.max(c.monto-gastado,0);
-    var pct=c.monto>0?(gastado/c.monto*100).toFixed(1)+'%':'--';
-    capSheet.push([c.nombre,c.tipo,c.moneda,c.monto,parseFloat(gastado.toFixed(2)),parseFloat(resto.toFixed(2)),pct]);
-  });
-  capSheet.push([]);
-  // Totales en EUR
   var totalCapEur=cap.reduce(function(a,c){
     if(c.moneda==='EUR')return a+c.monto;
     if(c.moneda==='ARS')return a+(appState.euroRate?c.monto/appState.euroRate:0);
@@ -2757,30 +2713,37 @@ function exportGastosExcel(){
   },0);
   var totalGastEur=appState.gastos.reduce(function(a,g){return a+eurEquiv(g);},0);
   var saldoEur=Math.max(totalCapEur-totalGastEur,0);
-  capSheet.push(['TOTAL (equiv. EUR)','','','',parseFloat(totalCapEur.toFixed(2)),parseFloat(totalGastEur.toFixed(2)),parseFloat(saldoEur.toFixed(2))]);
-  if(appState.euroRate)capSheet.push(['Cotizacion EUR/ARS usada',appState.euroRate]);
+  var capSheet=[['CAPITAL DEL VIAJE - CAJA COMUN'],[''],
+    ['Descripcion','Moneda','Monto']];
+  cap.forEach(function(c){capSheet.push([c.nombre,c.moneda,c.monto]);});
+  capSheet.push([]);
+  capSheet.push(['TOTAL DISPONIBLE (equiv. EUR)','',parseFloat(totalCapEur.toFixed(2))]);
+  capSheet.push(['TOTAL GASTADO (equiv. EUR)','',parseFloat(totalGastEur.toFixed(2))]);
+  capSheet.push(['SALDO RESTANTE (equiv. EUR)','',parseFloat(saldoEur.toFixed(2))]);
+  capSheet.push(['% EJECUTADO','',totalCapEur>0?parseFloat((totalGastEur/totalCapEur*100).toFixed(1)):0]);
+  capSheet.push([]);
+  if(appState.euroRate)capSheet.push(['Cotizacion EUR/ARS',appState.euroRate]);
+  if(appState.usdRate)capSheet.push(['Cotizacion EUR/USD',appState.usdRate]);
   var ws3=XLSX.utils.aoa_to_sheet(capSheet);
-  ws3['!cols']=[{wch:24},{wch:18},{wch:8},{wch:18},{wch:16},{wch:16},{wch:12}];
+  ws3['!cols']=[{wch:28},{wch:10},{wch:18}];
   XLSX.utils.book_append_sheet(wb,ws3,'Capital del viaje');
 
   // Hoja 3: Resumen y totales
   var tE=appState.gastos.filter(function(g){return g.moneda==='EUR';}).reduce(function(a,g){return a+parseFloat(g.monto);},0);
   var tA=appState.gastos.filter(function(g){return g.moneda==='ARS';}).reduce(function(a,g){return a+parseFloat(g.monto);},0);
   var tU=appState.gastos.filter(function(g){return g.moneda==='USD';}).reduce(function(a,g){return a+parseFloat(g.monto);},0);
+  var MEDIOS=['Tarjeta crédito','Tarjeta débito','Efectivo EUR','Efectivo ARS','Efectivo USD','Transferencia'];
   var tot=[['RESUMEN - ITINERITAS'],[''],
     ['TOTALES GENERALES'],
     ['Total EUR',tE],['Total ARS',tA]];
   if(tU>0)tot.push(['Total USD',tU]);
-  tot.push(['Total equiv. EUR',totalGastEur]);
+  tot.push(['Total equiv. EUR',parseFloat(totalGastEur.toFixed(2))]);
   tot.push([]);
-  tot.push(['POR FUENTE DE PAGO (equiv. EUR)']);
-  cap.forEach(function(c){
-    var gastado=appState.gastos.filter(function(g){return g.fuente===c.nombre;}).reduce(function(a,g){return a+eurEquiv(g);},0);
-    if(gastado>0)tot.push([c.nombre,parseFloat(gastado.toFixed(2))]);
+  tot.push(['POR METODO DE PAGO (equiv. EUR)']);
+  MEDIOS.forEach(function(m){
+    var t=appState.gastos.filter(function(g){return (g.medio||g.fuente||'')===m;}).reduce(function(a,g){return a+eurEquiv(g);},0);
+    if(t>0)tot.push([m,parseFloat(t.toFixed(2))]);
   });
-  // Gastos sin fuente asignada (datos viejos)
-  var sinFuente=appState.gastos.filter(function(g){return !g.fuente&&!g.medio;}).reduce(function(a,g){return a+eurEquiv(g);},0);
-  if(sinFuente>0)tot.push(['Sin fuente asignada',parseFloat(sinFuente.toFixed(2))]);
   tot.push([]);
   tot.push(['POR CATEGORIA (equiv. EUR)']);
   GASTO_CATS.forEach(function(c){
