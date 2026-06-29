@@ -519,8 +519,8 @@ input[type="file"]{display:none}
     <p id="home-trip-name" style="text-align:center;font-family:'Cinzel',serif;font-size:0.8667rem;color:var(--gold2);margin:-6px 0 4px;letter-spacing:.04em"></p>
     <p style="text-align:center;font-family:'IM Fell English',serif;font-size:0.8rem;color:var(--ink3);margin-bottom:0;line-height:1.5">App ad peregrinationem tuam<br>La app para tu peregrinaci&oacute;n</p>
     <p class="home-date" id="home-date"></p>
-    <div class="stat-row" style="justify-content:center">
-      <div class="stat-card" style="min-width:140px;max-width:200px"><div class="stat-num" id="home-day">-</div><div class="stat-lbl">D&iacute;a del viaje</div></div>
+    <div style="display:flex;justify-content:center;margin-bottom:1rem">
+      <div class="stat-card" style="min-width:160px;max-width:220px;text-align:center"><div class="stat-num" id="home-day">-</div><div class="stat-lbl">D&iacute;a del viaje</div></div>
     </div>
     <div id="home-trip-status" style="margin-bottom:1rem;display:flex;justify-content:center"></div>
     <div class="card">
@@ -532,7 +532,7 @@ input[type="file"]{display:none}
       <div id="home-crono"><div class="empty-state"><span class="eico">&#128197;</span>Sin actividades cargadas</div></div>
       <div class="sep"></div>
       <div class="flex-row" style="flex-wrap:nowrap">
-        <button class="btn btn-sm" onclick="openModal('modal-crono')">+ Agregar</button>
+        <button class="btn btn-sm" onclick="openNuevoCrono()">+ Agregar</button>
         <button class="btn btn-sm btn-accent" onclick="openModal('modal-crono-full')">Ver cronograma completo</button>
       </div>
     </div>
@@ -873,7 +873,13 @@ input[type="file"]{display:none}
       <button class="sub-tab" id="crono-tab-excel" onclick="switchCronoTab('excel')">Desde Excel</button>
     </div>
     <div id="crono-panel-manual">
-      <label>Hora</label><input type="time" id="crono-hora">
+      <label>Hora</label>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <input type="time" id="crono-hora" style="flex:1;margin-bottom:0">
+        <label style="display:flex;align-items:center;gap:5px;font-size:0.8667rem;color:var(--ink2);white-space:nowrap;cursor:pointer;margin-bottom:0">
+          <input type="checkbox" id="crono-todo-dia" onchange="toggleCronoTodoDia(this)" style="width:auto;margin:0"> Todo el d&iacute;a
+        </label>
+      </div>
       <label>Descripci&oacute;n</label><input type="text" id="crono-desc" placeholder="Ej: Visita al Coliseo">
       <label>Lugar / Ciudad</label><input type="text" id="crono-lugar" placeholder="Ej: Roma">
       <label>Link Google Maps (opcional)</label><input type="url" id="crono-maps" placeholder="https://maps.google.com/...">
@@ -1421,7 +1427,7 @@ function handleFabClick(){
     // Si el sub-tab activo es Notas, el FAB crea una nueva nota
     var notasTab=document.getElementById('subtab-notas');
     if(notasTab&&notasTab.style.display!=='none')openNotaModal(-1);
-    else openModal('modal-crono');
+    else openNuevoCrono();
   }else if(fabSectionActual==='transporte'){
     openModalVuelo(-1);
   }
@@ -1518,26 +1524,59 @@ function renderHome(){
 
 function openCronoFull(){
   try{
-    var sorted=appState.cronograma.slice().sort(function(a,b){return ((a.fecha||'')+(a.hora||'')).localeCompare((b.fecha||'')+(b.hora||''));});
     var contenedor=document.getElementById('crono-full-content');
-    if(!sorted.length){contenedor.innerHTML='<div class="empty-state"><span class="eico">&#128197;</span>Sin actividades cargadas</div>';openModal('modal-crono-full');return;}
-    var byDate={};
-    sorted.forEach(function(c){var f=c.fecha||'Sin fecha';if(!byDate[f])byDate[f]=[];byDate[f].push(c);});
-    var partes=[];
-    Object.keys(byDate).sort().forEach(function(fecha){
-      partes.push('<div style="font-family:Cinzel,serif;font-size:0.8rem;color:var(--crimson);font-weight:600;padding:8px 0 4px;border-bottom:1px solid var(--border2);margin-bottom:6px">'+esc(fecha)+'</div>');
-      byDate[fecha].forEach(function(c){
-        var realIdx=appState.cronograma.indexOf(c);
-        var mapsHtml=c.maps?'<a class="crono-maps-link" href="'+esc(c.maps)+'" target="_blank">&#128205; Maps</a>':'';
-        var linkHtml=c.link?'<a class="crono-maps-link" href="'+esc(c.link)+'" target="_blank" style="margin-left:6px">&#128279; Enlace</a>':'';
-        partes.push('<div class="crono-item"><div class="crono-item-top"><div class="crono-time">'+(c.todoElDia?'Todo el d&iacute;a':esc(c.hora||''))+'</div><div class="crono-desc">'+esc(c.desc||'')+(c.lugar?'<div class="crono-place">'+esc(c.lugar)+'</div>':'')+'</div><div class="crono-actions"><button class="btn btn-sm btn-edit" onclick="openEditCrono('+realIdx+')">Editar</button><button class="btn btn-sm btn-danger" onclick="removeCrono('+realIdx+')">Borrar</button></div></div>'+(mapsHtml||linkHtml?'<div style="padding:2px 0 4px">'+mapsHtml+linkHtml+'</div>':'')+'</div>');
-      });
-    });
-    contenedor.innerHTML=partes.join('');
+    contenedor.innerHTML='<div style="text-align:center;padding:20px;color:var(--ink3)">Cargando...</div>';
     openModal('modal-crono-full');
+    // Diferir el render para que el modal se abra primero (evita bloqueo visual)
+    setTimeout(function(){
+      try{
+        var sorted=appState.cronograma.slice().sort(function(a,b){
+          return ((a.fecha||'')+(a.hora||'')).localeCompare((b.fecha||'')+(b.hora||''));
+        });
+        if(!sorted.length){
+          contenedor.innerHTML='<div class="empty-state"><span class="eico">&#128197;</span>Sin actividades cargadas</div>';
+          return;
+        }
+        // Agrupar por fecha
+        var byDate={};
+        sorted.forEach(function(c){
+          var f=c.fecha||'Sin fecha';
+          if(!byDate[f])byDate[f]=[];
+          byDate[f].push(c);
+        });
+        // Construir HTML como string y asignar una sola vez
+        var parts=['<div style="padding-bottom:8px">'];
+        Object.keys(byDate).sort().forEach(function(fecha){
+          parts.push('<div style="font-family:Cinzel,serif;font-size:0.8rem;color:var(--crimson);font-weight:600;padding:8px 0 4px;border-bottom:1px solid var(--border2);margin-bottom:6px">'+esc(fecha)+'</div>');
+          byDate[fecha].forEach(function(c){
+            var realIdx=appState.cronograma.indexOf(c);
+            var horaLabel=c.todoElDia?'Todo el d&iacute;a':esc(c.hora||'--:--');
+            var mapsLink=c.maps?'<a class="crono-maps-link" href="'+esc(c.maps)+'" target="_blank">&#128205; Maps</a> ':'';
+            var adjLink=c.link?'<a class="crono-maps-link" href="'+esc(c.link)+'" target="_blank">&#128279; Enlace</a>':'';
+            parts.push(
+              '<div class="crono-item">'+
+                '<div class="crono-item-top">'+
+                  '<div class="crono-time">'+horaLabel+'</div>'+
+                  '<div class="crono-desc">'+esc(c.desc||'')+
+                    (c.lugar?'<div class="crono-place">'+esc(c.lugar)+'</div>':'')+
+                  '</div>'+
+                  '<div class="crono-actions">'+
+                    '<button class="btn btn-sm btn-edit" onclick="openEditCrono('+realIdx+')">Editar</button>'+
+                    '<button class="btn btn-sm btn-danger" onclick="removeCrono('+realIdx+')">Borrar</button>'+
+                  '</div>'+
+                '</div>'+
+                (mapsLink||adjLink?'<div style="padding:2px 0 4px">'+mapsLink+adjLink+'</div>':'')+
+              '</div>'
+            );
+          });
+        });
+        parts.push('</div>');
+        contenedor.innerHTML=parts.join('');
+      }catch(ex2){contenedor.innerHTML='<div class="empty-state">Error al cargar: '+esc(ex2.message)+'</div>';}
+    },30);
   }catch(ex){
-    console.error('Error en openCronoFull:',ex);
-    showToast('Error al cargar el cronograma. Intentá de nuevo.');
+    showToast('Error al abrir el cronograma.');
+    console.error(ex);
   }
 }
 
@@ -2880,35 +2919,85 @@ function toggleMicTrad(lang){if(!window.SpeechRecognition&&!window.webkitSpeechR
 
 function switchCronoTab(tab){document.getElementById('crono-tab-manual').classList.toggle('active',tab==='manual');document.getElementById('crono-tab-excel').classList.toggle('active',tab==='excel');document.getElementById('crono-panel-manual').style.display=tab==='manual'?'block':'none';document.getElementById('crono-panel-excel').style.display=tab==='excel'?'block':'none';}
 
+function toggleCronoTodoDia(cb){
+  var horaInput=document.getElementById('crono-hora');
+  horaInput.disabled=cb.checked;
+  if(cb.checked)horaInput.value='';
+}
+
+function resetCronoForm(){
+  document.getElementById('crono-hora').value='';
+  document.getElementById('crono-hora').disabled=false;
+  document.getElementById('crono-todo-dia').checked=false;
+  document.getElementById('crono-desc').value='';
+  document.getElementById('crono-lugar').value='';
+  document.getElementById('crono-maps').value='';
+  document.getElementById('crono-link').value='';
+  document.getElementById('crono-fecha').value='';
+  document.getElementById('crono-edit-idx').value='-1';
+}
+
+function openNuevoCrono(){
+  resetCronoForm();
+  document.getElementById('modal-crono-title').innerHTML='Nueva actividad <button class="modal-close" onclick="closeModal(\'modal-crono\')">X</button>';
+  document.getElementById('crono-mode-tabs').style.display='flex';
+  document.getElementById('crono-panel-manual').style.display='block';
+  document.getElementById('crono-panel-excel').style.display='none';
+  openModal('modal-crono');
+}
+
 function openEditCrono(idx){
   var c=appState.cronograma[idx];
+  if(!c)return;
+  resetCronoForm();
   document.getElementById('modal-crono-title').innerHTML='Editar actividad <button class="modal-close" onclick="closeModal(\'modal-crono\')">X</button>';
   document.getElementById('crono-mode-tabs').style.display='none';
   document.getElementById('crono-panel-excel').style.display='none';
   document.getElementById('crono-panel-manual').style.display='block';
-  document.getElementById('crono-hora').value=c.hora||'';
+  if(c.todoElDia){
+    document.getElementById('crono-todo-dia').checked=true;
+    document.getElementById('crono-hora').disabled=true;
+  } else {
+    document.getElementById('crono-hora').value=c.hora||'';
+  }
   document.getElementById('crono-desc').value=c.desc||'';
   document.getElementById('crono-lugar').value=c.lugar||'';
   document.getElementById('crono-maps').value=c.maps||'';
   document.getElementById('crono-link').value=c.link||'';
   document.getElementById('crono-fecha').value=c.fecha||'';
-  document.getElementById('crono-edit-idx').value=idx;
+  document.getElementById('crono-edit-idx').value=String(idx);
   closeModal('modal-crono-full');
   openModal('modal-crono');
 }
 
 function saveCrono(){
-  var c={hora:val('crono-hora'),desc:val('crono-desc'),lugar:val('crono-lugar'),maps:val('crono-maps'),link:val('crono-link'),fecha:val('crono-fecha')||todayStr()};
-  if(!c.hora&&!c.desc){showToast('Ingresá hora y descripción');return;}
-  if(!c.hora)c.hora='00:00';
-  var idx=parseInt(document.getElementById('crono-edit-idx').value);
-  if(idx>=0){appState.cronograma[idx]=c;}else{appState.cronograma.push(c);}
-  saveState();closeModal('modal-crono');renderHome();
-  document.getElementById('modal-crono-title').innerHTML='Actividad <button class="modal-close" onclick="closeModal(\'modal-crono\')">X</button>';
-  document.getElementById('crono-mode-tabs').style.display='flex';
-  document.getElementById('crono-edit-idx').value=-1;
-  ['crono-hora','crono-desc','crono-lugar','crono-maps','crono-link','crono-fecha'].forEach(function(id){document.getElementById(id).value='';});
-  showToast(idx>=0?'Actividad actualizada':'Actividad agregada');
+  var todoElDia=document.getElementById('crono-todo-dia').checked;
+  var hora=todoElDia?'00:00':val('crono-hora');
+  var desc=val('crono-desc');
+  if(!desc){showToast('Ingresá una descripción');return;}
+  if(!todoElDia&&!hora){showToast('Ingresá la hora o marcá "Todo el día"');return;}
+  var c={
+    hora:hora,
+    desc:desc,
+    lugar:val('crono-lugar'),
+    maps:val('crono-maps'),
+    link:val('crono-link'),
+    fecha:val('crono-fecha')||todayStr()
+  };
+  if(todoElDia)c.todoElDia=true;
+  var idxRaw=document.getElementById('crono-edit-idx').value;
+  var idx=parseInt(idxRaw);
+  if(!isNaN(idx)&&idx>=0&&idx<appState.cronograma.length){
+    appState.cronograma[idx]=c;
+    showToast('Actividad actualizada');
+  } else {
+    appState.cronograma.push(c);
+    showToast('Actividad agregada');
+  }
+  saveState();
+  closeModal('modal-crono');
+  renderHome();
+  resetCronoForm();
 }
 
 function removeCrono(idx){appState.cronograma.splice(idx,1);saveState();renderHome();openCronoFull();}
