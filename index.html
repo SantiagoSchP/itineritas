@@ -519,8 +519,8 @@ input[type="file"]{display:none}
     <p id="home-trip-name" style="text-align:center;font-family:'Cinzel',serif;font-size:0.8667rem;color:var(--gold2);margin:-6px 0 4px;letter-spacing:.04em"></p>
     <p style="text-align:center;font-family:'IM Fell English',serif;font-size:0.8rem;color:var(--ink3);margin-bottom:0;line-height:1.5">App ad peregrinationem tuam<br>La app para tu peregrinaci&oacute;n</p>
     <p class="home-date" id="home-date"></p>
-    <div class="stat-row">
-      <div class="stat-card"><div class="stat-num" id="home-day">-</div><div class="stat-lbl">Dia del viaje</div></div>
+    <div class="stat-row" style="justify-content:center">
+      <div class="stat-card" style="min-width:140px;max-width:200px"><div class="stat-num" id="home-day">-</div><div class="stat-lbl">D&iacute;a del viaje</div></div>
     </div>
     <div id="home-trip-status" style="margin-bottom:1rem;display:flex;justify-content:center"></div>
     <div class="card">
@@ -654,7 +654,7 @@ input[type="file"]{display:none}
     <!-- CAPITAL DEL VIAJE -->
     <div class="card">
       <div class="card-title"><span>&#128181;</span> Capital del viaje</div>
-      <p style="font-size:0.8rem;color:var(--ink3);margin-bottom:10px">Sum&aacute; todos tus ingresos disponibles para el viaje. La app los suma en una caja com&uacute;n y te muestra cu&aacute;nto quer queda a medida que registr&aacute;s gastos.</p>
+      <p style="font-size:0.8rem;color:var(--ink3);margin-bottom:10px">Sum&aacute; todos tus ingresos disponibles para el viaje. La app los suma en una caja com&uacute;n y te muestra cu&aacute;nto queda a medida que registr&aacute;s gastos.</p>
       <div id="capital-list"></div>
       <button class="btn btn-sm btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="openCapitalModal(-1)">+ Agregar ingreso</button>
     </div>
@@ -874,10 +874,12 @@ input[type="file"]{display:none}
     </div>
     <div id="crono-panel-manual">
       <label>Hora</label><input type="time" id="crono-hora">
-      <label>Descripcion</label><input type="text" id="crono-desc" placeholder="Ej: Visita al Coliseo">
+      <label>Descripci&oacute;n</label><input type="text" id="crono-desc" placeholder="Ej: Visita al Coliseo">
       <label>Lugar / Ciudad</label><input type="text" id="crono-lugar" placeholder="Ej: Roma">
       <label>Link Google Maps (opcional)</label><input type="url" id="crono-maps" placeholder="https://maps.google.com/...">
-      <label>Fecha (vacio = hoy)</label><input type="date" id="crono-fecha">
+      <label>Enlace adjunto (ticket, entrada, reserva...)</label>
+      <input type="url" id="crono-link" placeholder="https://... (link a ticket, PDF, etc.)">
+      <label>Fecha (vac&iacute;o = hoy)</label><input type="date" id="crono-fecha">
       <input type="hidden" id="crono-edit-idx" value="-1">
       <div class="flex-row" style="margin-top:8px"><button class="btn" onclick="closeModal('modal-crono')">Cancelar</button><button class="btn btn-primary" id="btn-save-crono" onclick="saveCrono()">Guardar</button></div>
     </div>
@@ -1484,9 +1486,10 @@ function renderHome(){
   var crono=appState.cronograma.filter(function(c){return c.fecha===td;}).sort(function(a,b){return a.hora.localeCompare(b.hora);});
   var nowHM=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
   document.getElementById('home-crono').innerHTML=crono.length?crono.map(function(c,i){
-    var mapsHtml=c.maps?'<a class="crono-maps-link" href="'+esc(c.maps)+'" target="_blank">Ver en Maps</a>':'';
-    var pastClass=(c.hora&&c.hora<=nowHM)?' past':'';
-    return '<div class="crono-item'+pastClass+'"><div class="crono-item-top"><div class="crono-time">'+(c.todoElDia?'Todo el d&iacute;a':esc(c.hora))+'</div><div class="crono-desc">'+esc(c.desc)+(c.lugar?'<div class="crono-place">'+esc(c.lugar)+'</div>':'')+'</div></div>'+mapsHtml+'</div>';
+    var mapsHtml=c.maps?'<a class="crono-maps-link" href="'+esc(c.maps)+'" target="_blank">&#128205; Maps</a>':'';
+    var linkHtml=c.link?'<a class="crono-maps-link" href="'+esc(c.link)+'" target="_blank" style="margin-left:6px">&#128279; Enlace</a>':'';
+    var pastClass=(c.hora&&c.hora<=nowHM&&!c.todoElDia)?' past':'';
+    return '<div class="crono-item'+pastClass+'"><div class="crono-item-top"><div class="crono-time">'+(c.todoElDia?'Todo el d&iacute;a':esc(c.hora))+'</div><div class="crono-desc">'+esc(c.desc)+(c.lugar?'<div class="crono-place">'+esc(c.lugar)+'</div>':'')+'</div></div>'+(mapsHtml||linkHtml?'<div>'+mapsHtml+linkHtml+'</div>':'')+'</div>';
   }).join(''):'<div class="empty-state"><span class="eico">&#128197;</span>Sin actividades cargadas</div>';
   var finDiv=document.getElementById('home-fin-resumen');
   var cap=appState.capital||[];
@@ -1514,21 +1517,28 @@ function renderHome(){
 }
 
 function openCronoFull(){
-  var sorted=appState.cronograma.slice().sort(function(a,b){return (a.fecha+a.hora).localeCompare(b.fecha+b.hora);});
-  if(!sorted.length){document.getElementById('crono-full-content').innerHTML='<div class="empty-state"><span class="eico">&#128197;</span>Sin actividades cargadas</div>';openModal('modal-crono-full');return;}
-  var byDate={};sorted.forEach(function(c){if(!byDate[c.fecha])byDate[c.fecha]=[];byDate[c.fecha].push(c);});
-  var html='';
-  Object.keys(byDate).sort().forEach(function(fecha){
-    var idx=appState.cronograma.indexOf(byDate[fecha][0]);
-    html+='<div style="font-family:Cinzel,serif;font-size:0.8rem;color:var(--crimson);font-weight:600;padding:8px 0 4px;border-bottom:1px solid var(--border2);margin-bottom:6px">'+fecha+'</div>';
-    byDate[fecha].forEach(function(c){
-      var realIdx=appState.cronograma.indexOf(c);
-      var mapsHtml=c.maps?'<a class="crono-maps-link" href="'+esc(c.maps)+'" target="_blank">Maps</a>':'';
-      html+='<div class="crono-item"><div class="crono-item-top"><div class="crono-time">'+(c.todoElDia?'Todo el d&iacute;a':esc(c.hora))+'</div><div class="crono-desc">'+esc(c.desc)+(c.lugar?'<div class="crono-place">'+esc(c.lugar)+'</div>':'')+'</div><div class="crono-actions"><button class="btn btn-sm btn-edit" onclick="openEditCrono('+realIdx+')">Editar</button><button class="btn btn-sm btn-danger" onclick="removeCrono('+realIdx+')">Borrar</button></div></div>'+mapsHtml+'</div>';
+  try{
+    var sorted=appState.cronograma.slice().sort(function(a,b){return ((a.fecha||'')+(a.hora||'')).localeCompare((b.fecha||'')+(b.hora||''));});
+    var contenedor=document.getElementById('crono-full-content');
+    if(!sorted.length){contenedor.innerHTML='<div class="empty-state"><span class="eico">&#128197;</span>Sin actividades cargadas</div>';openModal('modal-crono-full');return;}
+    var byDate={};
+    sorted.forEach(function(c){var f=c.fecha||'Sin fecha';if(!byDate[f])byDate[f]=[];byDate[f].push(c);});
+    var partes=[];
+    Object.keys(byDate).sort().forEach(function(fecha){
+      partes.push('<div style="font-family:Cinzel,serif;font-size:0.8rem;color:var(--crimson);font-weight:600;padding:8px 0 4px;border-bottom:1px solid var(--border2);margin-bottom:6px">'+esc(fecha)+'</div>');
+      byDate[fecha].forEach(function(c){
+        var realIdx=appState.cronograma.indexOf(c);
+        var mapsHtml=c.maps?'<a class="crono-maps-link" href="'+esc(c.maps)+'" target="_blank">&#128205; Maps</a>':'';
+        var linkHtml=c.link?'<a class="crono-maps-link" href="'+esc(c.link)+'" target="_blank" style="margin-left:6px">&#128279; Enlace</a>':'';
+        partes.push('<div class="crono-item"><div class="crono-item-top"><div class="crono-time">'+(c.todoElDia?'Todo el d&iacute;a':esc(c.hora||''))+'</div><div class="crono-desc">'+esc(c.desc||'')+(c.lugar?'<div class="crono-place">'+esc(c.lugar)+'</div>':'')+'</div><div class="crono-actions"><button class="btn btn-sm btn-edit" onclick="openEditCrono('+realIdx+')">Editar</button><button class="btn btn-sm btn-danger" onclick="removeCrono('+realIdx+')">Borrar</button></div></div>'+(mapsHtml||linkHtml?'<div style="padding:2px 0 4px">'+mapsHtml+linkHtml+'</div>':'')+'</div>');
+      });
     });
-  });
-  document.getElementById('crono-full-content').innerHTML=html;
-  openModal('modal-crono-full');
+    contenedor.innerHTML=partes.join('');
+    openModal('modal-crono-full');
+  }catch(ex){
+    console.error('Error en openCronoFull:',ex);
+    showToast('Error al cargar el cronograma. Intentá de nuevo.');
+  }
 }
 
 function borrarTodoCrono(){
@@ -2880,6 +2890,7 @@ function openEditCrono(idx){
   document.getElementById('crono-desc').value=c.desc||'';
   document.getElementById('crono-lugar').value=c.lugar||'';
   document.getElementById('crono-maps').value=c.maps||'';
+  document.getElementById('crono-link').value=c.link||'';
   document.getElementById('crono-fecha').value=c.fecha||'';
   document.getElementById('crono-edit-idx').value=idx;
   closeModal('modal-crono-full');
@@ -2887,15 +2898,16 @@ function openEditCrono(idx){
 }
 
 function saveCrono(){
-  var c={hora:val('crono-hora'),desc:val('crono-desc'),lugar:val('crono-lugar'),maps:val('crono-maps'),fecha:val('crono-fecha')||todayStr()};
-  if(!c.hora||!c.desc){showToast('Ingresá hora y descripción');return;}
+  var c={hora:val('crono-hora'),desc:val('crono-desc'),lugar:val('crono-lugar'),maps:val('crono-maps'),link:val('crono-link'),fecha:val('crono-fecha')||todayStr()};
+  if(!c.hora&&!c.desc){showToast('Ingresá hora y descripción');return;}
+  if(!c.hora)c.hora='00:00';
   var idx=parseInt(document.getElementById('crono-edit-idx').value);
   if(idx>=0){appState.cronograma[idx]=c;}else{appState.cronograma.push(c);}
   saveState();closeModal('modal-crono');renderHome();
   document.getElementById('modal-crono-title').innerHTML='Actividad <button class="modal-close" onclick="closeModal(\'modal-crono\')">X</button>';
   document.getElementById('crono-mode-tabs').style.display='flex';
   document.getElementById('crono-edit-idx').value=-1;
-  ['crono-hora','crono-desc','crono-lugar','crono-maps','crono-fecha'].forEach(function(id){document.getElementById(id).value='';});
+  ['crono-hora','crono-desc','crono-lugar','crono-maps','crono-link','crono-fecha'].forEach(function(id){document.getElementById(id).value='';});
   showToast(idx>=0?'Actividad actualizada':'Actividad agregada');
 }
 
@@ -2908,104 +2920,134 @@ function loadCronoXLSX(input){
     try{
       var wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
       var ws=wb.Sheets[wb.SheetNames[0]];
-      var raw=XLSX.utils.sheet_to_json(ws,{raw:false,dateNF:'yyyy-mm-dd',defval:''});
-      if(!raw.length){document.getElementById('crono-excel-msg').textContent='El archivo parece vacío.';return;}
-      var keys=Object.keys(raw[0]);
+      // Leer con raw:true para acceder a los valores reales (datetime, numeros)
+      var rawRows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+      if(!rawRows.length){document.getElementById('crono-excel-msg').textContent='El archivo parece vacío.';return;}
 
-      function findCol(names){
+      // Detectar fila de encabezado (primera fila con texto en varias columnas)
+      var headerRow=0;
+      var headers=rawRows[0]?rawRows[0].map(function(h){return h?String(h).toLowerCase().trim():'';}):[]; 
+
+      // Detectar columnas por nombre
+      function col(names){
         for(var ni=0;ni<names.length;ni++){
-          for(var ki=0;ki<keys.length;ki++){
-            var k=keys[ki].toLowerCase().replace(/[^a-záéíóúñ0-9]/gi,'');
-            var n=names[ni].toLowerCase().replace(/[^a-záéíóúñ0-9]/gi,'');
-            if(k===n||k.indexOf(n)>-1||n.indexOf(k)>-1)return keys[ki];
+          for(var ki=0;ki<headers.length;ki++){
+            var h=headers[ki].replace(/[^a-záéíóúñ0-9]/gi,'');
+            var n=names[ni].replace(/[^a-záéíóúñ0-9]/gi,'');
+            if(h===n||h.indexOf(n)>-1||n.indexOf(h)>-1)return ki;
           }
         }
-        return null;
+        return -1;
       }
 
-      // Columnas de fecha: puede ser una sola o varias (dia, mes, anio / dia semana, etc.)
-      var colF=findCol(['fecha','date','dia','day']);
-      var colDia=findCol(['numeroDia','nroDia','numeroDeDia','dayNumber','dd']);
-      var colMes=findCol(['mes','month','mm']);
-      var colAnio=findCol(['anio','año','year','aaaa','yyyy']);
-      var colDiaSem=findCol(['diaSemana','weekday','diasemana','dayofweek']);
-      var colH=findCol(['hora','hour','time','horario']);
-      var colD=findCol(['descripcion','desc','actividad','activity','nombre','detalle','titulo','title']);
-      var colL=findCol(['lugar','location','locacion','ciudad','city']);
-      var colM=findCol(['maps','mapa','link','url','google']);
+      var iMes=col(['mes','month']);
+      var iDia=col(['dia','día','day','numero']);
+      var iHora=col(['hora','hour','time','horario']);
+      var iDesc=col(['descripcion','descripción','desc','actividad','activity','nombre','detalle','titulo']);
+      var iLugar=col(['lugar','ciudad','location','city']);
+      var iDir=col(['direccion','dirección','dir','maps','mapa','link','url','google']);
+
+      var MESES={junio:'06',julio:'07',agosto:'08',septiembre:'09',enero:'01',febrero:'02',
+                 marzo:'03',abril:'04',mayo:'05',octubre:'10',noviembre:'11',diciembre:'12',
+                 june:'06',july:'07',august:'08',september:'09',january:'01',february:'02',
+                 march:'03',april:'04',may:'05',october:'10',november:'11',december:'12'};
+
       var added=0;
+      var lastMes=null,lastDia=null;
+      // Usar el año del viaje si está configurado, sino el año actual
+      var tripYear=appState.tripStart?appState.tripStart.slice(0,4):(new Date().getFullYear().toString());
 
-      raw.forEach(function(row){
-        var fechaRaw='';
-        var horaRaw=colH?row[colH]:'';
-        var descRaw=colD?row[colD]:'';
-        var lugarRaw=colL?row[colL]:'';
-        var mapsRaw=colM?row[colM]:'';
+      for(var ri=1;ri<rawRows.length;ri++){
+        var row=rawRows[ri];
+        if(!row||row.every(function(v){return v===null||v===''||v===undefined;}))continue;
 
-        if(!colD){
-          // Sin columna detectada: usar posicion fija
-          var vals=Object.values(row);
-          fechaRaw=vals[0]||'';horaRaw=vals[1]||'';descRaw=vals[2]||'';lugarRaw=vals[3]||'';mapsRaw=vals[4]||'';
-        } else if(colF){
-          // Fecha en una sola columna
-          fechaRaw=row[colF]||'';
-        } else if(colDia&&colMes){
-          // Fecha en columnas separadas: dia + mes (+ anio opcional)
-          var d=String(row[colDia]||'').trim().padStart(2,'0');
-          var m=String(row[colMes]||'').trim();
-          // Si mes es nombre, convertir a numero
-          var meses={enero:'01',febrero:'02',marzo:'03',abril:'04',mayo:'05',junio:'06',julio:'07',agosto:'08',septiembre:'09',octubre:'10',noviembre:'11',diciembre:'12',
-                     january:'01',february:'02',march:'03',april:'04',may:'05',june:'06',july:'07',august:'08',september:'09',october:'10',november:'11',december:'12'};
-          var mLow=m.toLowerCase().replace(/[^a-z]/g,'');
-          if(meses[mLow])m=meses[mLow];
-          else m=m.padStart(2,'0');
-          var a=colAnio?String(row[colAnio]||'').trim():(new Date().getFullYear().toString());
-          if(a.length===2)a='20'+a;
-          fechaRaw=a+'-'+m+'-'+d;
-        } else if(colDiaSem){
-          // Solo tiene dia de semana sin fecha numerica: usar el texto como referencia
-          // pero sin fecha concreta no podemos parsear, dejamos todayStr
-          fechaRaw='';
+        function getCell(idx){return idx>=0&&idx<row.length?row[idx]:null;}
+
+        // Mes
+        var mesRaw=getCell(iMes>=0?iMes:0);
+        var diaRaw=getCell(iDia>=0?iDia:1);
+        var horaRaw=getCell(iHora>=0?iHora:3);
+        var descRaw=getCell(iDesc>=0?iDesc:4);
+        var lugarRaw=getCell(iLugar>=0?iLugar:5);
+        var dirRaw=getCell(iDir>=0?iDir:6);
+
+        // Heredar mes/dia de la fila anterior si están vacíos
+        if(mesRaw!==null&&mesRaw!==undefined&&mesRaw!==''){
+          var mesStr=String(mesRaw).trim().toLowerCase();
+          lastMes=MESES[mesStr]||mesStr;
+        }
+        if(diaRaw!==null&&diaRaw!==undefined&&diaRaw!==''){
+          lastDia=String(Math.floor(parseFloat(diaRaw))).padStart(2,'0');
         }
 
-        var desc=String(descRaw).trim();
-        if(!desc)return;
+        var desc=descRaw?String(descRaw).trim().replace(/\n/g,' | '):'';
+        if(!desc)continue;
+        if(desc.toLowerCase()===headers.join('')||ri===0)continue;// saltar encabezado repetido
 
-        // Hora: aceptar "Todo el dia", "Todo el día", "All day", vacío → marcar especial
-        var hora=String(horaRaw).trim();
+        // Construir fecha
+        var fecha=lastMes&&lastDia?tripYear+'-'+lastMes+'-'+lastDia:todayStr();
+
+        // Hora
+        var hora='00:00';
         var todoElDia=false;
-        if(!hora||/todo\s*el\s*d[ií]a/i.test(hora)||/all\s*day/i.test(hora)||hora==='-'||hora==='--'){
-          todoElDia=true;
-          hora='00:00';
-        } else if(/^\d+\.\d+$/.test(hora)){
-          // Numero decimal de Excel (ej: 0.375 = 09:00)
-          var hv=parseFloat(hora)*24;var hh=Math.floor(hv);var mm=Math.round((hv-hh)*60);
+        if(horaRaw===null||horaRaw===undefined||horaRaw===''){
+          todoElDia=true;hora='00:00';
+        } else if(typeof horaRaw==='object'&&horaRaw instanceof Date){
+          // XLSX.js convierte datetime.time a Date
+          var hh=horaRaw.getHours?horaRaw.getHours():horaRaw.getUTCHours();
+          var mm=horaRaw.getMinutes?horaRaw.getMinutes():horaRaw.getUTCMinutes();
           hora=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+        } else if(typeof horaRaw==='number'&&horaRaw>0&&horaRaw<1){
+          // Numero decimal de Excel (fraccion del dia)
+          var hv=horaRaw*24;var hh2=Math.floor(hv);var mm2=Math.round((hv-hh2)*60);
+          hora=String(hh2).padStart(2,'0')+':'+String(mm2).padStart(2,'0');
         } else {
-          // Limpiar formato 12h: "9:30 AM" → "09:30"
-          var ampm=hora.match(/(\d{1,2}):?(\d{0,2})\s*(am|pm)/i);
-          if(ampm){
-            var hh12=parseInt(ampm[1]);var mm12=parseInt(ampm[2]||0);var ap=ampm[3].toLowerCase();
-            if(ap==='pm'&&hh12<12)hh12+=12;
-            if(ap==='am'&&hh12===12)hh12=0;
-            hora=String(hh12).padStart(2,'0')+':'+String(mm12).padStart(2,'0');
+          var hs=String(horaRaw).trim();
+          if(/todo\s*el\s*d[ií]a/i.test(hs)||/all\s*day/i.test(hs)||hs==='-'){
+            todoElDia=true;hora='00:00';
+          } else {
+            var ampm=hs.match(/(\d{1,2}):?(\d{0,2})\s*(am|pm)/i);
+            if(ampm){
+              var h12=parseInt(ampm[1]);var m12=parseInt(ampm[2]||0);
+              if(ampm[3].toLowerCase()==='pm'&&h12<12)h12+=12;
+              if(ampm[3].toLowerCase()==='am'&&h12===12)h12=0;
+              hora=String(h12).padStart(2,'0')+':'+String(m12).padStart(2,'0');
+            } else {
+              hora=(hs.match(/\d{1,2}:\d{2}/)||['00:00'])[0];
+            }
           }
-          hora=hora.slice(0,5);
-          if(!/^\d{1,2}:\d{2}$/.test(hora))hora='00:00';
         }
 
-        var fs=parseFecha(String(fechaRaw))||todayStr();
-        var entry={hora:hora,desc:desc,lugar:String(lugarRaw).trim(),maps:String(mapsRaw).trim(),fecha:fs};
+        var entry={
+          hora:hora,
+          desc:desc,
+          lugar:lugarRaw?String(lugarRaw).trim():'',
+          maps:dirRaw?String(dirRaw).trim():'',
+          fecha:fecha
+        };
         if(todoElDia)entry.todoElDia=true;
         appState.cronograma.push(entry);
         added++;
-      });
+      }
 
-      saveState();
-      document.getElementById('crono-excel-msg').textContent=added+' actividades importadas.';
-      showToast(added+' actividades importadas');
-      renderHome();
-    }catch(ex){document.getElementById('crono-excel-msg').textContent='Error: '+ex.message;}
+      if(added>0){
+        // Ordenar cronograma por fecha y hora
+        appState.cronograma.sort(function(a,b){
+          var ka=(a.fecha||'')+(a.hora||'');
+          var kb=(b.fecha||'')+(b.hora||'');
+          return ka.localeCompare(kb);
+        });
+        saveState();
+        document.getElementById('crono-excel-msg').textContent=added+' actividades importadas correctamente.';
+        showToast(added+' actividades importadas');
+        renderHome();
+      } else {
+        document.getElementById('crono-excel-msg').textContent='No se encontraron actividades. Verificá el formato del archivo.';
+      }
+    }catch(ex){
+      console.error('Error importando cronograma:',ex);
+      document.getElementById('crono-excel-msg').textContent='Error al leer el archivo: '+ex.message;
+    }
   };
   r.onerror=function(){document.getElementById('crono-excel-msg').textContent='Error al leer el archivo.';};
   r.readAsBinaryString(file);
