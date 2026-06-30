@@ -1804,6 +1804,7 @@ function renderNotas(){
   var dragIdx=null;
   items.forEach(function(el){
     el.addEventListener('dragstart',function(e){
+      if(e.target.closest('.postit-check')||e.target.closest('a')||e.target.closest('.postit-btn')){e.preventDefault();return;}
       dragIdx=parseInt(el.getAttribute('data-nota-idx'));
       el.style.opacity='0.5';
       e.dataTransfer.effectAllowed='move';
@@ -1837,7 +1838,13 @@ function renderNotas(){
   var touchDragIdx=null,touchClone=null,touchStartY=0;
   items.forEach(function(el){
     var longPressTimer=null;
+    var dragHandle=el.querySelector('.postit-drag-handle');
     el.addEventListener('touchstart',function(e){
+      // Si el toque empezo sobre un checkbox, un link, o un boton de accion,
+      // NUNCA activar el drag tactil: dejamos que el toque haga su funcion normal
+      // (marcar/desmarcar, abrir un link, editar, borrar) sin interferencias.
+      var target=e.target;
+      if(target.closest('.postit-check')||target.closest('a')||target.closest('.postit-btn')||target.closest('li'))return;
       longPressTimer=setTimeout(function(){
         touchDragIdx=parseInt(el.getAttribute('data-nota-idx'));
         // Crear clon visual
@@ -1847,7 +1854,7 @@ function renderNotas(){
         el.style.opacity='0.3';
         if(window.navigator.vibrate)window.navigator.vibrate(40);
         touchStartY=e.touches[0].clientY-el.getBoundingClientRect().top;
-      },500);
+      },650);
     },false);
     el.addEventListener('touchmove',function(e){
       clearTimeout(longPressTimer);
@@ -1872,7 +1879,7 @@ function renderNotas(){
       var overEl=board.querySelector('.postit.drag-over');
       if(overEl){
         var dropIdx=parseInt(overEl.getAttribute('data-nota-idx'));
-        if(touchDragIdx!==dropIdx){
+        if(touchDragIdx!==dropIdx&&!isNaN(touchDragIdx)&&!isNaN(dropIdx)){
           var moved=appState.notas.splice(touchDragIdx,1)[0];
           appState.notas.splice(dropIdx,0,moved);
           saveState();
