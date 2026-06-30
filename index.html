@@ -1723,7 +1723,7 @@ function parsearNotaCuerpo(texto){
     if(enLista){html+='</'+(enLista==='check'?'ul':enLista)+'>';enLista=null;}
   }
 
-  lineas.forEach(function(linea){
+  lineas.forEach(function(linea,lineIdx){
     var vineta=linea.match(/^[-*]\s+(.+)/);
     var numerada=linea.match(/^\d+\.\s+(.+)/);
     var checkOk=linea.match(/^\[x\]\s*(.*)/i);
@@ -1733,7 +1733,7 @@ function parsearNotaCuerpo(texto){
       if(enLista!=='check'){cerrarLista();html+='<ul style="list-style:none;padding-left:0">';enLista='check';}
       var checked=!!checkOk;
       var txt=linkificar(checked?checkOk[1]:checkPend[1]);
-      html+='<li class="'+(checked?'checked':'')+'" onclick="toggleNotaCheck(this)"><input type="checkbox" class="postit-check"'+(checked?' checked':'')+' onclick="event.stopPropagation()"> '+txt+'</li>';
+      html+='<li class="'+(checked?'checked':'')+'" data-line="'+lineIdx+'" onclick="toggleNotaCheck(this)"><input type="checkbox" class="postit-check"'+(checked?' checked':'')+' onclick="event.stopPropagation()"> '+txt+'</li>';
     } else if(vineta){
       if(enLista!=='ul'){cerrarLista();html+='<ul>';enLista='ul';}
       html+='<li>'+linkificar(vineta[1])+'</li>';
@@ -1751,30 +1751,23 @@ function parsearNotaCuerpo(texto){
 }
 
 function toggleNotaCheck(li){
-  // Cuando el usuario toca una linea de checkbox en una nota renderizada,
-  // actualizar el texto fuente en appState y re-renderizar
-  var board=document.getElementById('notas-board');
   var postit=li.closest('.postit');
   if(!postit)return;
   var idx=parseInt(postit.getAttribute('data-nota-idx'));
   if(isNaN(idx)||!appState.notas||!appState.notas[idx])return;
   var nota=appState.notas[idx];
+  var lineIdx=parseInt(li.getAttribute('data-line'));
+  if(isNaN(lineIdx))return;
   var lineas=nota.cuerpo.split('\n');
-  var liItems=postit.querySelectorAll('.postit-body li');
-  var liArr=Array.from(liItems);
-  var liIdx=liArr.indexOf(li);
-  // Contar solo las lineas de checkbox en el texto fuente
-  var checkCount=0;
-  for(var i=0;i<lineas.length;i++){
-    if(/^\[x?\s?\]/.test(lineas[i])){
-      if(checkCount===liIdx){
-        // Toggle
-        if(/^\[x\]/i.test(lineas[i]))lineas[i]=lineas[i].replace(/^\[x\]/i,'[ ]');
-        else lineas[i]=lineas[i].replace(/^\[\s?\]/,'[x]');
-        break;
-      }
-      checkCount++;
-    }
+  if(lineIdx<0||lineIdx>=lineas.length)return;
+  var linea=lineas[lineIdx];
+  // Toggle exacto de esa linea especifica, sin afectar ninguna otra
+  if(/^\[x\]/i.test(linea)){
+    lineas[lineIdx]=linea.replace(/^\[x\]/i,'[ ]');
+  } else if(/^\[\s?\]/.test(linea)){
+    lineas[lineIdx]=linea.replace(/^\[\s?\]/,'[x]');
+  } else {
+    return; // la linea no es un checkbox, no hacer nada
   }
   nota.cuerpo=lineas.join('\n');
   saveState();
