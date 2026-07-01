@@ -1337,8 +1337,11 @@ var saveTimer=null;
 function saveState(){
   if(!currentUser||!appState||!tripsBox)return;
   var box=packTripsBoxForSave();
+  // Guardar timestamp dentro de los datos para poder comparar
+  // offline vs online al arrancar y no perder cambios sin sincronizar
+  box._lastModified=Date.now();
   lsSet('cache_'+currentUser,box);
-  if(!isOnline){pendingSync=true;setSyncStatus('Sin conexion - pendiente');return;}
+  if(!isOnline){pendingSync=true;setSyncStatus('Sin conexión - pendiente');return;}
   clearTimeout(saveTimer);
   saveTimer=setTimeout(function(){
     setSyncStatus('Guardando...');
@@ -1347,12 +1350,11 @@ function saveState(){
         pendingSync=false;
         setSyncStatus('Sincronizado');
         setTimeout(function(){setSyncStatus('');},3000);
-        // Avisar al SW que limpie caché de datos dinámicos
         if(navigator.serviceWorker&&navigator.serviceWorker.controller){
           navigator.serviceWorker.controller.postMessage({tipo:'limpiar-cache-datos'});
         }
       })
-      .catch(function(){pendingSync=true;setSyncStatus('Sin conexion - pendiente');});
+      .catch(function(){pendingSync=true;setSyncStatus('Sin conexión - pendiente');});
   },1500);
 }
 function setSyncStatus(m){var e=document.getElementById('nav-sync-status');if(e)e.textContent=m;}
@@ -1363,12 +1365,44 @@ function boot(){
   var sess=lsGet('session');
   if(sess&&sess.user){
     showLoading('Cargando tu cuenta...');
+    var cache=lsGet('cache_'+sess.user);
     sbGet(sess.user).then(function(u){
-      if(u){currentUser=sess.user;currentHash=u.password_hash;currentName=u.name;tripsBox=normalizeTripsBox(u.data);appState=getActiveTrip(tripsBox);hideLoading();showApp();}
+      if(u){
+        currentUser=sess.user;currentHash=u.password_hash;currentName=u.name;
+        // LOGICA CRITICA: comparar timestamp local vs Supabase.
+        // Si hay datos locales MAS NUEVOS que los de Supabase (escritos offline
+        // y no sincronizados aun), usar los locales Y sincronizarlos ahora.
+        var remoteTs=(u.data&&u.data._lastModified)||0;
+        var localTs=(cache&&cache._lastModified)||0;
+        var datosFinales;
+        if(localTs>remoteTs&&cache){
+          // Los datos locales son mas nuevos: se escribio algo offline
+          // que no llego a Supabase. Usamos los locales y los subimos ahora.
+          datosFinales=cache;
+          showToast('Datos locales más nuevos — sincronizando...');
+          // Subir los datos locales a Supabase para no perderlos
+          sbUpsert(currentUser,currentHash,currentName,datosFinales)
+            .then(function(){setSyncStatus('Sincronizado');setTimeout(function(){setSyncStatus('');},3000);})
+            .catch(function(){pendingSync=true;setSyncStatus('Sin conexión - pendiente');});
+        } else {
+          // Supabase tiene la version mas nueva (o igual): usar la de Supabase
+          datosFinales=u.data;
+          // Actualizar la cache local para que quede alineada
+          lsSet('cache_'+currentUser,datosFinales);
+        }
+        tripsBox=normalizeTripsBox(datosFinales);
+        appState=getActiveTrip(tripsBox);
+        hideLoading();showApp();
+      }
       else{lsDel('session');hideLoading();document.getElementById('auth-screen').style.display='flex';}
     }).catch(function(){
-      var cache=lsGet('cache_'+sess.user);
-      if(cache){currentUser=sess.user;currentName='';currentHash='';tripsBox=normalizeTripsBox(cache);appState=getActiveTrip(tripsBox);hideLoading();showApp();showToast('Sin internet - datos locales');}
+      // Sin conexion: usar cache local
+      if(cache){
+        currentUser=sess.user;currentName='';currentHash='';
+        tripsBox=normalizeTripsBox(cache);appState=getActiveTrip(tripsBox);
+        hideLoading();showApp();showToast('Sin internet — usando datos guardados localmente');
+        pendingSync=true;setSyncStatus('Sin conexión - pendiente');
+      }
       else{hideLoading();document.getElementById('auth-screen').style.display='flex';}
     });
   }else{hideLoading();document.getElementById('auth-screen').style.display='flex';}
