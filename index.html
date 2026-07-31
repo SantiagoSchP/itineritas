@@ -694,10 +694,13 @@ input[type="file"]{display:none}
   <div class="section main" id="section-intenciones">
     <div class="section-title"><span>&#128591;</span> Intenciones</div>
     <div class="card">
-      <div class="card-title"><span>&#128194;</span> Cargar desde Excel</div>
+      <div class="card-title"><span>&#128194;</span> Excel de intenciones</div>
       <p style="font-size:0.8667rem;color:var(--ink3);margin-bottom:4px;font-style:italic">Columnas: intenci&oacute;n, autor, fecha</p>
       <p style="font-size:0.8rem;color:var(--ink3);margin-bottom:8px">Formato fecha: YYYY-MM-DD (ej: 2025-07-15). Formatea esa columna como Texto en Excel.</p>
-      <button class="btn" onclick="document.getElementById('file-intenciones').click()">Seleccionar .xlsx</button>
+      <div class="flex-row">
+        <button class="btn" onclick="document.getElementById('file-intenciones').click()">&#128229; Cargar .xlsx</button>
+        <button class="btn btn-primary" onclick="exportIntenciones()">&#128228; Exportar todas</button>
+      </div>
       <input type="file" id="file-intenciones" accept=".xlsx,.xls,.csv" onchange="loadIntenciones(this)">
     </div>
     <div class="card">
@@ -710,6 +713,7 @@ input[type="file"]{display:none}
     </div>
     <div class="card">
       <div class="card-title"><span>&#128203;</span> Todas las intenciones <span style="font-size:0.6667rem;color:var(--ink3)">(ordenadas por fecha)</span></div>
+      <div id="int-total" style="font-size:0.8rem;color:var(--ink3);margin-bottom:10px"></div>
       <div id="intenciones-list"><div class="empty-state"><span class="eico">&#128591;</span>Sin intenciones cargadas</div></div>
       <div class="sep"></div>
       <button class="btn btn-sm btn-danger" onclick="borrarTodoIntenciones()">Borrar todas las intenciones</button>
@@ -2892,9 +2896,29 @@ function loadIntenciones(input){
 }
 
 function renderIntenciones(){
-  document.getElementById('intenciones-list').innerHTML=appState.intenciones.length?appState.intenciones.map(function(i,idx){
+  var total=appState.intenciones.length;
+  var totalEl=document.getElementById('int-total');
+  if(totalEl){
+    totalEl.textContent=total?('Total: '+total+' intenci'+(total===1?'ón':'ones')):'';
+  }
+  document.getElementById('intenciones-list').innerHTML=total?appState.intenciones.map(function(i,idx){
     return '<div class="int-item"><div class="int-header"><span class="badge '+(i.fecha?'badge-gold':'badge-crimson')+'">'+(i.fecha?i.fecha:'General')+'</span><div style="display:flex;gap:4px"><button class="btn btn-sm btn-edit" onclick="openEditIntencion('+idx+')">Editar</button><button class="btn btn-sm btn-danger" onclick="removeItem(\'intenciones\','+idx+')">Borrar</button></div></div><div class="int-txt">'+esc(i.texto)+'</div><div class="int-meta">- '+esc(i.autor)+'</div></div>';
   }).join(''):'<div class="empty-state"><span class="eico">&#128591;</span>Sin intenciones cargadas</div>';
+}
+
+function exportIntenciones(){
+  if(!appState.intenciones.length){showToast('No hay intenciones para exportar.');return;}
+  if(!window.XLSX){showToast('Cargando exportador...');setTimeout(exportIntenciones,1200);return;}
+  var wb=XLSX.utils.book_new();
+  var rows=[['Intencion','Autor','Fecha']];
+  appState.intenciones.forEach(function(i){
+    rows.push([i.texto||'',i.autor||'',i.fecha||'']);
+  });
+  var ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:50},{wch:20},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws,'Intenciones');
+  XLSX.writeFile(wb,'intenciones_itineritas.xlsx');
+  showToast('Excel descargado con '+appState.intenciones.length+' intenciones');
 }
 
 function openEditIntencion(idx){
